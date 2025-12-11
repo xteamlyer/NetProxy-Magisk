@@ -78,7 +78,7 @@
 /data/adb/modules/netproxy/xraycore/config/default.json
 ```
 
-你可以在这里自定义 `inbounds / outbounds`，或导入由工具／脚本生成的配置。
+你可以参考这里的 `inbounds / outbounds`，配置。
 
 ---
 
