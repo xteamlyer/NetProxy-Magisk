@@ -2,6 +2,19 @@
 <html lang="zh-CN">
 
 <head>
+  <!-- 初始背景色设置，防止主题切换时闪屏 -->
+  <style>
+    /* 初始背景色设置，防止主题切换时闪屏 */
+    body, mdui-layout, mdui-layout-main {
+      background-color: white;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      body, mdui-layout, mdui-layout-main {
+        background-color: #121212; /* MDUI 深色模式默认背景色 */
+      }
+    }
+  </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- 禁用缓存 -->
