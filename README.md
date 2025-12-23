@@ -1,6 +1,6 @@
 <p align="center">
-  <strong>系统级 Xray 透明代理模块（Magisk）</strong><br>
-  通过 Magisk 接管 Android 系统流量，支持全局 / 分应用 / 白名单 / 透明代理等功能
+  <strong>系统级 Xray 透明代理模块（Android）</strong><br>
+  接管 Android 系统流量，支持全局 / 分应用 / 白名单 / 透明代理等功能
 </p>
 
 <p align="center">
