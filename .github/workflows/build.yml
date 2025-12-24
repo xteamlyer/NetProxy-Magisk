@@ -1,0 +1,44 @@
+name: 构建模块
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v5
+
+      - name: 设置 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: webui/package-lock.json
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装 WebUI 依赖
+        working-directory: webui
+        run: npm install
+
+      - name: 构建 WebUI
+        working-directory: webui
+        run: python build_webui.py
+
+      - name: 打包 NetProxy 模块
+        run: |
+          cd NetProxy-Module
+          zip -r ../NetProxy-Module.zip .
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetProxy-Module
+          path: NetProxy-Module.zip
