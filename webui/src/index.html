@@ -54,7 +54,16 @@
 
         // 动态创建遮罩层的背景色样式
         var style = document.createElement('style');
-        style.textContent = '#fouc-overlay { background-color: ' + (isDark ? '#141218' : '#fef7ff') + '; }';
+        var fallbackColor = isDark ? '#141218' : '#fef7ff';
+        
+        if (savedTheme === 'auto') {
+          // 自动模式：使用 KernelSU 注入的 Monet 变量，回退到默认颜色
+          // --background 是 KernelSU colors.css 注入的莫奈取色变量
+          style.textContent = '#fouc-overlay { background-color: var(--background, ' + fallbackColor + '); }';
+        } else {
+          // 手动模式：使用硬编码的颜色（因为手动模式下忽略 KernelSU 变量）
+          style.textContent = '#fouc-overlay { background-color: ' + fallbackColor + '; }';
+        }
         document.head.appendChild(style);
       } catch (e) {
         document.documentElement.classList.add('mdui-theme-auto');
