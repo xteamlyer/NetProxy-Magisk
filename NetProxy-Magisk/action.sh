@@ -1,44 +1,38 @@
 #!/system/bin/sh
+set -e
 
-MODDIR=${0%/*}
-START_SCRIPT="$MODDIR/start.sh"
-STOP_SCRIPT="$MODDIR/stop.sh"
+readonly MODDIR="${0%/*}"
+readonly START_SCRIPT="$MODDIR/scripts/start.sh"
+readonly STOP_SCRIPT="$MODDIR/scripts/stop.sh"
+readonly LOG_FILE="$MODDIR/logs/service.log"
+readonly XRAY_BIN="$MODDIR/bin/xray"
 
-# 日志函数
+#######################################
+# 记录日志
+# Arguments:
+#   $1 - 日志级别
+#   $2 - 日志消息
+#######################################
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$MODDIR/xraycore/log/service.log"
+    local level="${1:-INFO}"
+    local message="$2"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
 }
 
-# 检查 Xray 是否正在运行
-check_xray_running() {
-    PID=$(pgrep xray)
-    if [ -n "$PID" ]; then
-        log "Xray正在运行，PID: $PID"
-        return 0  # 进程正在运行
-    else
-        log "Xray未运行"
-        return 1  # 进程未运行
-    fi
+#######################################
+# 检查 Xray 是否运行
+# Returns:
+#   0 运行中, 1 未运行
+#######################################
+is_xray_running() {
+    pgrep -f "^$XRAY_BIN" >/dev/null 2>&1
 }
 
-# 启动 Xray
-start_xray() {
-    log "启动 Xray..."
-    sh "$START_SCRIPT"  # 调用 start.sh 来启动 Xray
-}
-
-# 停止 Xray
-stop_xray() {
-    log "停止 Xray..."
-    sh "$STOP_SCRIPT"  # 调用 stop.sh 来停止 Xray
-}
-
-# 主逻辑
-check_xray_running
-if [ $? -eq 0 ]; then
-    # 如果 Xray 正在运行，则停止它
-    stop_xray
+# 主流程
+if is_xray_running; then
+    log "INFO" "检测到 Xray 正在运行，执行停止操作"
+    sh "$STOP_SCRIPT"
 else
-    # 如果 Xray 没有运行，则启动它
-    start_xray
+    log "INFO" "检测到 Xray 未运行，执行启动操作"
+    sh "$START_SCRIPT"
 fi

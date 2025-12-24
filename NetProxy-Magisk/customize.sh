@@ -2,36 +2,77 @@
 
 SKIPUNZIP=1
 
-# 设置 xraycore 配置目录变量
-CONFIG_DIR="/data/adb/modules/netproxy/xraycore/config"
+readonly CONFIG_DIR="/data/adb/modules/netproxy/config"
 
-# 打印开始信息
-ui_print "开始安装..."
+#######################################
+# 备份并恢复配置文件
+# Returns:
+#   0 成功, 1 失败
+#######################################
+backup_and_restore_config() {
+    if [ -d "$CONFIG_DIR" ] && [ "$(ls -A "$CONFIG_DIR" 2>/dev/null)" ]; then
+        ui_print "检测到现有配置，开始备份..."
+        
+        # 备份整个 config 目录
+        if ! cp -r "$CONFIG_DIR" "$TMPDIR/config_backup" >/dev/null 2>&1; then
+            ui_print "警告: 配置备份失败"
+            return 1
+        fi
+        
+        # 解压新文件（排除整个配置目录）
+        ui_print "解压模块文件（保留现有配置）..."
+        if ! unzip -o "$ZIPFILE" -x "config/*" -d "$MODPATH" >/dev/null 2>&1; then
+            ui_print "错误: 解压失败"
+            return 1
+        fi
+        
+        # 创建 config 目录（如果不存在）
+        mkdir -p "$MODPATH/config" >/dev/null 2>&1
+        
+        # 恢复整个 config 目录
+        ui_print "恢复配置文件..."
+        if ! cp -r "$TMPDIR/config_backup"/* "$MODPATH/config/" >/dev/null 2>&1; then
+            ui_print "警告: 配置恢复失败"
+            return 1
+        fi
+        
+        ui_print "配置文件已保留"
+    else
+        ui_print "全新安装，解压完整模块..."
+        if ! unzip -o "$ZIPFILE" -d "$MODPATH" >/dev/null 2>&1; then
+            ui_print "错误: 解压失败"
+            return 1
+        fi
+    fi
+    
+    return 0
+}
 
-# 检查 CONFIG_DIR 目录是否为空
-if [ "$(ls -A "$CONFIG_DIR")" ]; then
-    # 如果目录非空，先备份 config 目录到 TMPDIR
-    ui_print "目录 $CONFIG_DIR 非空，开始备份..."
-    cp -r "$CONFIG_DIR" "$TMPDIR" >/dev/null 2>&1
+#######################################
+# 设置文件权限
+#######################################
+set_permissions() {
+    ui_print "设置文件权限..."
+    
+    set_perm_recursive "$MODPATH/bin/xray" 0 0 0755 0755
+    set_perm_recursive "$MODPATH/scripts/start.sh" 0 0 0755 0755
+    set_perm_recursive "$MODPATH/scripts/stop.sh" 0 0 0755 0755
+    set_perm_recursive "$MODPATH/scripts/update-xray.sh" 0 0 0755 0755
+    set_perm_recursive "$MODPATH/scripts/url2json.sh" 0 0 0755 0755
+    set_perm_recursive "$MODPATH/scripts/clean_reject.sh" 0 0 0755 0755
+    set_perm_recursive "$MODPATH/action.sh" 0 0 0755 0755
+}
 
-    # 解压并排除 xraycore/config  
-    ui_print "解压 $ZIPFILE 并排除 xraycore/config..."
-    unzip -o "$ZIPFILE" -x "xraycore/config/*" -d "$MODPATH" >/dev/null 2>&1  
+# 主流程
+ui_print "========================================="
+ui_print "   NetProxy - Xray 透明代理模块"
+ui_print "========================================="
 
-    # 恢复备份的 config 目录，注意只恢复 TMPDIR 下的内容
-    ui_print "恢复备份的 config 目录..."
-    cp -r "$TMPDIR/config" "$MODPATH/xraycore/" >/dev/null 2>&1
+if backup_and_restore_config && set_permissions; then
+    ui_print "安装成功！"
+    ui_print "请重启设备以使模块生效"
 else
-    # 如果目录为空，直接解压整个 ZIP 文件
-    ui_print "目录 $CONFIG_DIR 为空，直接解压 $ZIPFILE..."
-    unzip -o "$ZIPFILE" -d "$MODPATH" >/dev/null 2>&1
+    ui_print "安装过程中出现错误"
+    ui_print "请检查日志并重试"
+    exit 1
 fi
-
-# 设置文件可执行权限
-ui_print "正在设置 xray, start.sh 和 stop.sh 文件的可执行权限..."
-set_perm_recursive "$MODPATH/xraycore/xray" 0 0 0755 0755
-set_perm_recursive "$MODPATH/start.sh" 0 0 0755 0755
-set_perm_recursive "$MODPATH/stop.sh" 0 0 0755 0755
-
-# 打印安装完毕信息
-ui_print "安装脚本执行完毕。"
