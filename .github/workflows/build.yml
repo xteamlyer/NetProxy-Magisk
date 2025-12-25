@@ -1,13 +1,15 @@
-name: 构建模块
+name: 构建模块与通知
 
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
+  release:
+    types: [published]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: 拉取仓库代码
         uses: actions/checkout@v5
@@ -42,3 +44,57 @@ jobs:
         with:
           name: NetProxy-Module
           path: NetProxy-Module.zip
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 构建成功通知
+        if: ${{ needs.build.result == 'success' && github.event_name == 'push' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          format: markdown
+          message: |
+            🤖 *NetProxyBot 通知*
+            ✅ 构建成功！
+            
+            📦 仓库: `${{ github.repository }}`
+            🌿 分支: `${{ github.ref_name }}`
+            🧾 Commit: `${{ github.sha }}`
+            
+            🔗 [查看 Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: 构建失败通知
+        if: ${{ needs.build.result != 'success' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          format: markdown
+          message: |
+            🤖 *NetProxyBot 通知*
+            ❌ 构建失败！
+            
+            📦 仓库: `${{ github.repository }}`
+            🌿 分支: `${{ github.ref_name }}`
+            🧾 Commit: `${{ github.sha }}`
+            
+            🔗 [查看 Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Release 发布通知
+        if: ${{ github.event_name == 'release' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          format: markdown
+          message: |
+            🎉 *NetProxyBot 通知*
+            🏷️ 新版本发布！
+            
+            🔖 版本: `${{ github.event.release.tag_name }}`
+            📝 说明: `${{ github.event.release.name }}`
+            
+            ⬇️ 下载: [Release 页面](https://github.com/${{ github.repository }}/releases/latest)
