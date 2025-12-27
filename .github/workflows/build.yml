@@ -34,16 +34,11 @@ jobs:
         working-directory: webui
         run: python build_webui.py
 
-      - name: 打包 NetProxy 模块
-        run: |
-          cd NetProxy-Module
-          zip -r ../NetProxy-Module.zip .
-
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: NetProxy-Module
-          path: NetProxy-Module.zip
+          path: NetProxy-Module/
 
   notify:
     runs-on: ubuntu-latest
