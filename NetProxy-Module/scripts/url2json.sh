@@ -29,6 +29,7 @@ show_help() {
 
 选项:
     -o, --output <file>     输出文件路径 (默认: outbounds/<备注名>.json)
+    -d, --dir <directory>   输出目录 (用于订阅分组)
     -h, --help              显示此帮助信息
 
 示例:
@@ -886,6 +887,7 @@ EOF
 
 # 默认参数
 OUTPUT_FILE="config.json"
+OUTPUT_DIR=""
 PROXY_URL=""
 
 # 解析命令行参数
@@ -893,6 +895,10 @@ while [ $# -gt 0 ]; do
     case $1 in
         -o|--output)
             OUTPUT_FILE="$2"
+            shift 2
+            ;;
+        -d|--dir)
+            OUTPUT_DIR="$2"
             shift 2
             ;;
         -h|--help)
@@ -951,10 +957,15 @@ if [ "$OUTPUT_FILE" = "config.json" ]; then
     # 清理文件名中的文件系统不安全字符和空格
     # 移除: / \ : * ? " < > | 并将空格转为下划线
     SAFE_REMARK=$(echo "$REMARK" | sed 's/[\/\\:*?"<>| ]/_/g')
-    OUTPUT_FILE="${ADDCONFIG_FILE}${SAFE_REMARK}.json"
     
-    # 确保目录存在
-    mkdir -p "$ADDCONFIG_FILE"
+    # 使用指定目录或默认目录
+    if [ -n "$OUTPUT_DIR" ]; then
+        mkdir -p "$OUTPUT_DIR"
+        OUTPUT_FILE="${OUTPUT_DIR}/${SAFE_REMARK}.json"
+    else
+        mkdir -p "$ADDCONFIG_FILE"
+        OUTPUT_FILE="${ADDCONFIG_FILE}${SAFE_REMARK}.json"
+    fi
 fi
 
 # 显示解析结果

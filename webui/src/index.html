@@ -23,6 +23,7 @@
       z-index: 99999;
       transition: opacity 0.15s ease-out;
     }
+
     #fouc-overlay.fade-out {
       opacity: 0;
       pointer-events: none;
@@ -31,7 +32,7 @@
 
   <!-- 预先应用主题并设置遮罩颜色 -->
   <script>
-    (function() {
+    (function () {
       try {
         var savedTheme = localStorage.getItem('theme') || 'auto';
         var html = document.documentElement;
@@ -55,7 +56,7 @@
         // 动态创建遮罩层的背景色样式
         var style = document.createElement('style');
         var fallbackColor = isDark ? '#141218' : '#fef7ff';
-        
+
         if (savedTheme === 'auto') {
           // 自动模式：使用 KernelSU 注入的 Monet 变量，回退到默认颜色
           // --background 是 KernelSU colors.css 注入的莫奈取色变量
@@ -80,25 +81,25 @@
     5. monet.css - 将 Monet 颜色映射到 MDUI 变量（必须在 colors.css 之后）
     6. style.css - 自定义样式（使用已覆盖的颜色变量）
   -->
-  
+
   <!-- 1. MDUI 组件库 -->
   <link rel="stylesheet" href="./assets/mdui.css">
-  
+
   <!-- 2. Material Icons -->
   <link rel="stylesheet" href="./assets/material-icons.css">
-  
+
   <!-- 3. KernelSU WebUI 边到边适配 -->
   <!-- 在 KernelSU/APatch Manager WebView 中运行时动态提供 -->
   <link rel="stylesheet" href="https://mui.kernelsu.org/internal/insets.css">
-  
+
   <!-- 4. KernelSU Monet 动态颜色 -->
   <!-- 在 Android 12+ 设备上注入系统 Monet 颜色变量 -->
   <link rel="stylesheet" href="https://mui.kernelsu.org/internal/colors.css">
-  
+
   <!-- 5. Monet 颜色到 MDUI 的映射 -->
   <!-- 此文件将 KernelSU 注入的 Monet 变量覆盖到 MDUI 的颜色系统 -->
   <link rel="stylesheet" href="./monet.css">
-  
+
   <!-- 6. 自定义样式 -->
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -109,12 +110,12 @@
 
   <script>
     // 样式加载完成后淡出遮罩层
-    (function() {
+    (function () {
       function hideOverlay() {
         var overlay = document.getElementById('fouc-overlay');
         if (overlay) {
           overlay.classList.add('fade-out');
-          setTimeout(function() {
+          setTimeout(function () {
             overlay.remove();
           }, 150);
         }
@@ -262,11 +263,15 @@
                   <mdui-menu>
                     <mdui-menu-item id="import-node-link">
                       <mdui-icon slot="icon" name="link"></mdui-icon>
-                      节点链接导入
+                      节点导入
                     </mdui-menu-item>
                     <mdui-menu-item id="import-full-config">
                       <mdui-icon slot="icon" name="description"></mdui-icon>
-                      完整配置导入
+                      入站导入
+                    </mdui-menu-item>
+                    <mdui-menu-item id="import-subscription">
+                      <mdui-icon slot="icon" name="rss_feed"></mdui-icon>
+                      订阅导入
                     </mdui-menu-item>
                   </mdui-menu>
                 </mdui-dropdown>
@@ -291,7 +296,8 @@
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
                   <h2 style="margin: 0 0 4px 0; font-size: 18px;">代理模式</h2>
-                  <div id="proxy-mode-desc" style="font-size: 13px; color: var(--mdui-color-on-surface-variant);">黑名单模式：代理所有应用，排除列表中的应用</div>
+                  <div id="proxy-mode-desc" style="font-size: 13px; color: var(--mdui-color-on-surface-variant);">
+                    黑名单模式：代理所有应用，排除列表中的应用</div>
                 </div>
                 <mdui-segmented-button-group id="proxy-mode-switch" value="blacklist" selects="single">
                   <mdui-segmented-button value="blacklist">黑名单</mdui-segmented-button>
@@ -390,6 +396,16 @@
       helper="支持: vless://, vmess://, trojan://, ss://, socks://, http://, https://"></mdui-text-field>
     <mdui-button slot="action" variant="text" id="node-link-cancel">取消</mdui-button>
     <mdui-button slot="action" variant="filled" id="node-link-save">导入</mdui-button>
+  </mdui-dialog>
+
+  <!-- Subscription Dialog -->
+  <mdui-dialog id="subscription-dialog" headline="添加订阅">
+    <mdui-text-field label="订阅名称" placeholder="例如: 机场A" id="subscription-name"
+      style="width: 100%; margin-bottom: 16px;"></mdui-text-field>
+    <mdui-text-field label="订阅地址" placeholder="https://example.com/sub" id="subscription-url" style="width: 100%;"
+      helper="支持 Base64 编码的订阅链接"></mdui-text-field>
+    <mdui-button slot="action" variant="text" id="subscription-cancel">取消</mdui-button>
+    <mdui-button slot="action" variant="filled" id="subscription-save">添加</mdui-button>
   </mdui-dialog>
 
   <!-- Config Editor Dialog -->

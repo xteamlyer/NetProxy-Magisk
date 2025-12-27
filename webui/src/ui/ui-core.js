@@ -245,6 +245,20 @@ export class UI {
             await this.configPage.importNodeLink();
         });
 
+        // 订阅对话框事件
+        document.getElementById('import-subscription').addEventListener('click', () => {
+            importMenu.open = false;
+            document.getElementById('subscription-dialog').open = true;
+        });
+
+        document.getElementById('subscription-cancel').addEventListener('click', () => {
+            document.getElementById('subscription-dialog').open = false;
+        });
+
+        document.getElementById('subscription-save').addEventListener('click', async () => {
+            await this.configPage.saveSubscription();
+        });
+
         document.getElementById('config-cancel-btn').addEventListener('click', () => {
             document.getElementById('config-dialog').open = false;
         });

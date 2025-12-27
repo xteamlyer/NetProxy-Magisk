@@ -252,6 +252,102 @@ export class KSUService {
         }
     }
 
+    // ===================== 订阅管理 =====================
+
+    // 获取所有订阅列表
+    static async getSubscriptions() {
+        try {
+            const result = await this.exec(`find ${this.MODULE_PATH}/config/xray/outbounds -mindepth 1 -maxdepth 1 -type d -name 'sub_*' -exec basename {} \\;`);
+            const subscriptions = [];
+
+            for (const dir of result.split('\n').filter(d => d)) {
+                const name = dir.replace(/^sub_/, '');
+                try {
+                    const metaContent = await this.exec(`cat ${this.MODULE_PATH}/config/xray/outbounds/${dir}/_meta.json`);
+                    const meta = JSON.parse(metaContent);
+                    const nodeCount = await this.exec(`find ${this.MODULE_PATH}/config/xray/outbounds/${dir} -name '*.json' ! -name '_meta.json' | wc -l`);
+                    subscriptions.push({
+                        name: meta.name || name,
+                        dirName: dir,
+                        url: meta.url,
+                        updated: meta.updated,
+                        nodeCount: parseInt(nodeCount.trim()) || 0
+                    });
+                } catch (e) {
+                    // 无效订阅目录
+                }
+            }
+            return subscriptions;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    // 添加订阅
+    static async addSubscription(name, url) {
+        const result = await exec(`su -c "sh ${this.MODULE_PATH}/scripts/subscription.sh add '${name}' '${url}'"`);
+        if (result.errno !== 0) {
+            throw new Error(result.stderr || '添加订阅失败');
+        }
+        return { success: true };
+    }
+
+    // 更新订阅
+    static async updateSubscription(name) {
+        const result = await exec(`su -c "sh ${this.MODULE_PATH}/scripts/subscription.sh update '${name}'"`);
+        if (result.errno !== 0) {
+            throw new Error(result.stderr || '更新订阅失败');
+        }
+        return { success: true };
+    }
+
+    // 删除订阅
+    static async removeSubscription(name) {
+        const result = await exec(`su -c "sh ${this.MODULE_PATH}/scripts/subscription.sh remove '${name}'"`);
+        if (result.errno !== 0) {
+            throw new Error(result.stderr || '删除订阅失败');
+        }
+        return { success: true };
+    }
+
+    // 获取分组配置（包含默认分组和订阅分组）
+    static async getConfigGroups() {
+        const groups = [];
+        const outboundsDir = `${this.MODULE_PATH}/config/xray/outbounds`;
+
+        // 获取默认分组（直接在 outbounds 目录下的 json 文件）
+        try {
+            const defaultFiles = await this.exec(`find ${outboundsDir} -maxdepth 1 -name '*.json' -exec basename {} \\;`);
+            const defaultConfigs = defaultFiles.split('\n').filter(f => f);
+            if (defaultConfigs.length > 0) {
+                groups.push({
+                    type: 'default',
+                    name: '默认分组',
+                    dirName: '',
+                    configs: defaultConfigs
+                });
+            }
+        } catch (e) { }
+
+        // 获取订阅分组
+        const subscriptions = await this.getSubscriptions();
+        for (const sub of subscriptions) {
+            try {
+                const files = await this.exec(`find ${outboundsDir}/${sub.dirName} -name '*.json' ! -name '_meta.json' -exec basename {} \\;`);
+                groups.push({
+                    type: 'subscription',
+                    name: sub.name,
+                    dirName: sub.dirName,
+                    url: sub.url,
+                    updated: sub.updated,
+                    configs: files.split('\n').filter(f => f)
+                });
+            } catch (e) { }
+        }
+
+        return groups;
+    }
+
     // 获取日志
     static async getServiceLog(lines = 100) {
         try {

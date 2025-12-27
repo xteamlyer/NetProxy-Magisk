@@ -2,11 +2,12 @@ import { KSUService } from '../services/ksu-service.js';
 import { toast } from '../utils/toast.js';
 
 /**
- * 配置页面管理器
+ * 配置页面管理器 - 支持分组显示
  */
 export class ConfigPageManager {
     constructor(ui) {
         this.ui = ui;
+        this.expandedGroups = new Set(['默认分组']); // 默认展开的分组
     }
 
     /**
@@ -17,7 +18,6 @@ export class ConfigPageManager {
             const config = JSON.parse(content);
             const outbounds = config.outbounds || [];
 
-            // 查找第一个非 direct/freedom/blackhole 的出站
             for (const outbound of outbounds) {
                 const protocol = outbound.protocol;
                 if (!protocol || ['freedom', 'blackhole', 'dns'].includes(protocol)) {
@@ -27,15 +27,11 @@ export class ConfigPageManager {
                 let address = '';
                 let port = '';
 
-                // 根据协议解析地址和端口
                 if (outbound.settings) {
-                    // vless, vmess, trojan 使用 vnext
                     if (outbound.settings.vnext && outbound.settings.vnext[0]) {
                         address = outbound.settings.vnext[0].address || '';
                         port = outbound.settings.vnext[0].port || '';
-                    }
-                    // shadowsocks 使用 servers
-                    else if (outbound.settings.servers && outbound.settings.servers[0]) {
+                    } else if (outbound.settings.servers && outbound.settings.servers[0]) {
                         address = outbound.settings.servers[0].address || '';
                         port = outbound.settings.servers[0].port || '';
                     }
@@ -44,10 +40,8 @@ export class ConfigPageManager {
                 return { protocol, address, port };
             }
 
-            // 如果只有 freedom 类型，返回直连信息
             return { protocol: 'direct', address: '直连模式', port: '' };
         } catch (e) {
-            console.warn('Failed to parse config:', e);
             return { protocol: 'unknown', address: '', port: '' };
         }
     }
@@ -55,125 +49,194 @@ export class ConfigPageManager {
     async update() {
         try {
             const listEl = document.getElementById('config-list');
-
-            // 显示骨架屏
             this.ui.showSkeleton(listEl, 3);
 
-            const configs = await KSUService.getConfigList();
+            const groups = await KSUService.getConfigGroups();
             const { config: currentConfig } = await KSUService.getStatus();
 
-            if (configs.length === 0) {
+            if (groups.length === 0) {
                 listEl.innerHTML = '<mdui-list-item><div slot="headline">暂无配置文件</div></mdui-list-item>';
                 return;
             }
 
-            // 并行读取所有配置文件内容
-            const configInfoPromises = configs.map(async filename => {
-                try {
-                    const content = await KSUService.readConfig(filename);
-                    return { filename, info: this.parseOutboundInfo(content) };
-                } catch (e) {
-                    return { filename, info: { protocol: 'unknown', address: '', port: '' } };
-                }
-            });
-            const configInfos = await Promise.all(configInfoPromises);
-            const infoMap = new Map(configInfos.map(c => [c.filename, c.info]));
-
             listEl.innerHTML = '';
-            configs.forEach(filename => {
-                const item = document.createElement('mdui-list-item');
-                item.setAttribute('clickable', '');
 
-                // 显示名称（移除 .json 后缀）
-                const displayName = filename.replace(/\.json$/i, '');
-                item.setAttribute('headline', displayName);
-
-                // 获取出站信息
-                const info = infoMap.get(filename) || { protocol: 'unknown', address: '', port: '' };
-
-                // 显示协议、地址、端口
-                const description = info.port
-                    ? `${info.protocol} • ${info.address}:${info.port}`
-                    : `${info.protocol} • ${info.address}`;
-                item.setAttribute('description', description);
-
-                const isCurrent = filename === currentConfig;
-
-                // 当前配置标记
-                if (isCurrent) {
-                    const chip = document.createElement('mdui-chip');
-                    chip.slot = 'end';
-                    chip.textContent = '当前';
-                    chip.style.marginRight = '8px';
-                    item.appendChild(chip);
-                }
-
-                // 更多按钮（三点菜单）
-                const dropdown = document.createElement('mdui-dropdown');
-                dropdown.setAttribute('placement', 'bottom-end');
-                dropdown.slot = 'end-icon';
-
-                const menuBtn = document.createElement('mdui-button-icon');
-                menuBtn.setAttribute('slot', 'trigger');
-                menuBtn.setAttribute('icon', 'more_vert');
-                menuBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-                dropdown.appendChild(menuBtn);
-
-                const menu = document.createElement('mdui-menu');
-
-                // 编辑选项
-                const editItem = document.createElement('mdui-menu-item');
-                editItem.innerHTML = '<mdui-icon slot="icon" name="edit"></mdui-icon>编辑';
-                editItem.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    dropdown.open = false;
-                    await this.ui.showConfigDialog(filename);
-                });
-                menu.appendChild(editItem);
-
-                // 测试选项
-                const testItem = document.createElement('mdui-menu-item');
-                testItem.innerHTML = '<mdui-icon slot="icon" name="speed"></mdui-icon>测试';
-                testItem.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    dropdown.open = false;
-                    await this.testConfig(filename, info.address, info.port);
-                });
-                menu.appendChild(testItem);
-
-                // 删除选项（当前配置不可删除）
-                if (!isCurrent) {
-                    const deleteItem = document.createElement('mdui-menu-item');
-                    deleteItem.innerHTML = '<mdui-icon slot="icon" name="delete"></mdui-icon>删除';
-                    deleteItem.style.color = 'var(--mdui-color-error)';
-                    deleteItem.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        dropdown.open = false;
-                        await this.deleteConfig(filename);
-                    });
-                    menu.appendChild(deleteItem);
-                }
-
-                dropdown.appendChild(menu);
-                item.appendChild(dropdown);
-
-                // 点击切换配置
-                item.addEventListener('click', () => {
-                    if (!isCurrent) {
-                        this.switchConfig(filename);
-                    }
-                });
-
-                listEl.appendChild(item);
-            });
+            for (const group of groups) {
+                await this.renderGroup(listEl, group, currentConfig);
+            }
         } catch (error) {
             console.error('Update config page failed:', error);
         }
     }
 
-    async testConfig(filename, address, port) {
+    async renderGroup(container, group, currentConfig) {
+        const isExpanded = this.expandedGroups.has(group.name);
+
+        // 分组头部
+        const header = document.createElement('mdui-list-item');
+        header.setAttribute('clickable', '');
+        header.style.backgroundColor = 'var(--mdui-color-surface-container)';
+
+        // 展开/收起图标
+        const expandIcon = document.createElement('mdui-icon');
+        expandIcon.slot = 'icon';
+        expandIcon.name = isExpanded ? 'expand_more' : 'chevron_right';
+        header.appendChild(expandIcon);
+
+        // 分组标题
+        header.setAttribute('headline', `${group.name} (${group.configs.length})`);
+
+        // 订阅分组显示更新时间
+        if (group.type === 'subscription' && group.updated) {
+            const date = new Date(group.updated);
+            header.setAttribute('description', `更新于 ${date.toLocaleDateString()}`);
+        }
+
+        // 订阅分组添加刷新和删除按钮
+        if (group.type === 'subscription') {
+            const refreshBtn = document.createElement('mdui-button-icon');
+            refreshBtn.slot = 'end-icon';
+            refreshBtn.setAttribute('icon', 'refresh');
+            refreshBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await this.updateSubscription(group.name);
+            });
+            header.appendChild(refreshBtn);
+
+            const deleteBtn = document.createElement('mdui-button-icon');
+            deleteBtn.slot = 'end-icon';
+            deleteBtn.setAttribute('icon', 'delete');
+            deleteBtn.style.color = 'var(--mdui-color-error)';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await this.deleteSubscription(group.name);
+            });
+            header.appendChild(deleteBtn);
+        }
+
+        // 点击展开/收起
+        header.addEventListener('click', () => {
+            if (this.expandedGroups.has(group.name)) {
+                this.expandedGroups.delete(group.name);
+            } else {
+                this.expandedGroups.add(group.name);
+            }
+            this.update();
+        });
+
+        container.appendChild(header);
+
+        // 展开时显示节点列表
+        if (isExpanded) {
+            // 获取节点详情
+            const configInfos = await this.loadConfigInfos(group);
+
+            for (const filename of group.configs) {
+                const info = configInfos.get(filename) || { protocol: 'unknown', address: '', port: '' };
+                const fullPath = group.dirName ? `${group.dirName}/${filename}` : filename;
+                const isCurrent = currentConfig && currentConfig.endsWith(filename);
+
+                this.renderConfigItem(container, filename, fullPath, info, isCurrent, group);
+            }
+        }
+    }
+
+    async loadConfigInfos(group) {
+        const infoMap = new Map();
+
+        for (const filename of group.configs) {
+            try {
+                const fullPath = group.dirName ? `${group.dirName}/${filename}` : filename;
+                const content = await KSUService.readConfig(fullPath);
+                infoMap.set(filename, this.parseOutboundInfo(content));
+            } catch (e) {
+                infoMap.set(filename, { protocol: 'unknown', address: '', port: '' });
+            }
+        }
+
+        return infoMap;
+    }
+
+    renderConfigItem(container, filename, fullPath, info, isCurrent, group) {
+        const item = document.createElement('mdui-list-item');
+        item.setAttribute('clickable', '');
+        item.style.paddingLeft = '48px'; // 缩进表示层级
+
+        const displayName = filename.replace(/\.json$/i, '');
+        item.setAttribute('headline', displayName);
+
+        const description = info.port
+            ? `${info.protocol} • ${info.address}:${info.port}`
+            : `${info.protocol} • ${info.address}`;
+        item.setAttribute('description', description);
+
+        if (isCurrent) {
+            const chip = document.createElement('mdui-chip');
+            chip.slot = 'end';
+            chip.textContent = '当前';
+            chip.style.marginRight = '8px';
+            item.appendChild(chip);
+        }
+
+        // 三点菜单
+        const dropdown = document.createElement('mdui-dropdown');
+        dropdown.setAttribute('placement', 'bottom-end');
+        dropdown.slot = 'end-icon';
+
+        const menuBtn = document.createElement('mdui-button-icon');
+        menuBtn.setAttribute('slot', 'trigger');
+        menuBtn.setAttribute('icon', 'more_vert');
+        menuBtn.addEventListener('click', (e) => e.stopPropagation());
+        dropdown.appendChild(menuBtn);
+
+        const menu = document.createElement('mdui-menu');
+
+        // 编辑
+        const editItem = document.createElement('mdui-menu-item');
+        editItem.innerHTML = '<mdui-icon slot="icon" name="edit"></mdui-icon>编辑';
+        editItem.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.open = false;
+            await this.ui.showConfigDialog(fullPath);
+        });
+        menu.appendChild(editItem);
+
+        // 测试
+        const testItem = document.createElement('mdui-menu-item');
+        testItem.innerHTML = '<mdui-icon slot="icon" name="speed"></mdui-icon>测试';
+        testItem.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.open = false;
+            await this.testConfig(displayName, info.address);
+        });
+        menu.appendChild(testItem);
+
+        // 删除（非当前配置可删除）
+        if (!isCurrent) {
+            const deleteItem = document.createElement('mdui-menu-item');
+            deleteItem.innerHTML = '<mdui-icon slot="icon" name="delete"></mdui-icon>删除';
+            deleteItem.style.color = 'var(--mdui-color-error)';
+            deleteItem.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                dropdown.open = false;
+                await this.deleteConfig(fullPath, displayName);
+            });
+            menu.appendChild(deleteItem);
+        }
+
+        dropdown.appendChild(menu);
+        item.appendChild(dropdown);
+
+        item.addEventListener('click', () => {
+            if (!isCurrent) {
+                this.switchConfig(fullPath, displayName);
+            }
+        });
+
+        container.appendChild(item);
+    }
+
+    async testConfig(displayName, address) {
         if (!address || address === '直连模式') {
             toast('直连模式无需测试');
             return;
@@ -182,22 +245,18 @@ export class ConfigPageManager {
         try {
             toast('正在测试连接...');
             const latency = await KSUService.getPingLatency(address);
-            toast(`${filename.replace(/\.json$/i, '')}: ${latency}`);
+            toast(`${displayName}: ${latency}`);
         } catch (error) {
             toast('测试失败: ' + error.message);
         }
     }
 
-    async deleteConfig(filename) {
+    async deleteConfig(fullPath, displayName) {
         try {
-            const confirmed = await this.ui.confirm(`确定要删除配置文件 "${filename.replace(/\.json$/i, '')}" 吗？\n\n此操作不可恢复。`);
+            const confirmed = await this.ui.confirm(`确定要删除配置文件 "${displayName}" 吗？\n\n此操作不可恢复。`);
+            if (!confirmed) return;
 
-            if (!confirmed) {
-                return;
-            }
-
-            const result = await KSUService.deleteConfig(filename);
-
+            const result = await KSUService.deleteConfig(fullPath);
             if (result && result.success) {
                 toast('配置已删除');
                 this.update();
@@ -205,23 +264,121 @@ export class ConfigPageManager {
                 toast('删除失败: ' + (result?.error || '未知错误'));
             }
         } catch (error) {
-            console.error('deleteConfig error:', error);
             toast('删除失败: ' + error.message);
         }
     }
 
-    async switchConfig(filename) {
+    async switchConfig(fullPath, displayName) {
         try {
-            await KSUService.switchConfig(filename);
-            toast('已切换到: ' + filename.replace(/\.json$/i, ''));
-
+            await KSUService.switchConfig(fullPath);
+            toast('已切换到: ' + displayName);
             await this.update();
             await this.ui.statusPage.update();
         } catch (error) {
-            console.error('Switch config error:', error);
             toast('切换配置失败: ' + error.message);
         }
     }
+
+    // ===================== 订阅管理 =====================
+
+    async updateSubscription(name) {
+        try {
+            toast(`正在更新订阅 "${name}"...`);
+
+            // 先显示骨架屏
+            const listEl = document.getElementById('config-list');
+            this.ui.showSkeleton(listEl, 5);
+
+            await KSUService.updateSubscription(name);
+            toast('订阅更新成功');
+            this.update();
+        } catch (error) {
+            toast('更新失败: ' + error.message);
+            this.update();
+        }
+    }
+
+    async deleteSubscription(name) {
+        try {
+            const confirmed = await this.ui.confirm(`确定要删除订阅 "${name}" 吗？\n\n该订阅下的所有节点都将被删除。`);
+            if (!confirmed) return;
+
+            await KSUService.removeSubscription(name);
+            toast('订阅已删除');
+            this.expandedGroups.delete(name);
+            this.update();
+        } catch (error) {
+            toast('删除失败: ' + error.message);
+        }
+    }
+
+    async addSubscription() {
+        const dialog = document.getElementById('subscription-dialog');
+        const nameInput = document.getElementById('subscription-name');
+        const urlInput = document.getElementById('subscription-url');
+
+        nameInput.value = '';
+        urlInput.value = '';
+        dialog.open = true;
+    }
+
+    async saveSubscription() {
+        const nameInput = document.getElementById('subscription-name');
+        const urlInput = document.getElementById('subscription-url');
+        const saveBtn = document.getElementById('subscription-save');
+        const cancelBtn = document.getElementById('subscription-cancel');
+        const dialog = document.getElementById('subscription-dialog');
+
+        const name = nameInput.value.trim();
+        const url = urlInput.value.trim();
+
+        if (!name) {
+            toast('请输入订阅名称');
+            return;
+        }
+
+        if (!url) {
+            toast('请输入订阅地址');
+            return;
+        }
+
+        // 禁用按钮，显示加载状态
+        saveBtn.disabled = true;
+        saveBtn.loading = true;
+        cancelBtn.disabled = true;
+        nameInput.disabled = true;
+        urlInput.disabled = true;
+
+        try {
+            toast('正在下载订阅，请稍候...');
+
+            // 先关闭对话框，在后台异步处理
+            dialog.open = false;
+
+            // 显示配置列表骨架屏
+            const listEl = document.getElementById('config-list');
+            this.ui.showSkeleton(listEl, 5);
+
+            await KSUService.addSubscription(name, url);
+            toast('订阅添加成功');
+            this.expandedGroups.add(name);
+            this.update();
+        } catch (error) {
+            toast('添加失败: ' + error.message);
+            this.update();
+        } finally {
+            // 恢复按钮状态
+            saveBtn.disabled = false;
+            saveBtn.loading = false;
+            cancelBtn.disabled = false;
+            nameInput.disabled = false;
+            urlInput.disabled = false;
+            nameInput.value = '';
+            urlInput.value = '';
+        }
+    }
+
+    // ===================== 原有方法 =====================
 
     async showDialog(filename = null) {
         const dialog = document.getElementById('config-dialog');
@@ -260,7 +417,7 @@ export class ConfigPageManager {
         }
 
         try {
-            JSON.parse(content); // 验证 JSON
+            JSON.parse(content);
             await KSUService.saveConfig(filename, content);
             toast('保存成功');
             document.getElementById('config-dialog').open = false;
@@ -300,7 +457,6 @@ export class ConfigPageManager {
                 toast('导入失败: ' + (result.error || '未知错误'));
             }
         } catch (error) {
-            console.error('Import node link error:', error);
             toast('导入失败: ' + error.message);
         }
     }
