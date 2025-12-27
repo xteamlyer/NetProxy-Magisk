@@ -118,16 +118,7 @@ export class ConfigPageManager {
         console.log('switchConfig executing for:', filename);
 
         try {
-            const { status } = await KSUService.getStatus();
-            const wasRunning = status === 'running';
-
-            if (wasRunning) {
-                await KSUService.stopService();
-            }
-
             await KSUService.switchConfig(filename);
-            await KSUService.startService();
-
             toast('已切换到: ' + filename);
 
             await this.update();

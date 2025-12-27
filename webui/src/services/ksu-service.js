@@ -182,15 +182,22 @@ export class KSUService {
         }
     }
 
-    // 切换配置
+    // 切换配置（支持热切换）
     static async switchConfig(filename) {
+        const configPath = `${this.MODULE_PATH}/config/xray/outbounds/${filename}`;
         const { status } = await this.getStatus();
-        if (status === 'running') {
-            await this.stopService();
-        }
 
-        const newStatus = `status: "stopped"\nconfig: "${this.MODULE_PATH}/config/xray/outbounds/${filename}"`;
-        await this.exec(`echo '${newStatus}' > ${this.MODULE_PATH}/config/status.yaml`);
+        if (status === 'running') {
+            // 热切换：使用 Xray API 动态更新出站配置
+            const result = await exec(`su -c "sh ${this.MODULE_PATH}/scripts/switch-config.sh '${configPath}'"`);
+            if (result.errno !== 0) {
+                throw new Error(result.stderr || '热切换失败');
+            }
+        } else {
+            // 服务未运行：只更新 status.yaml
+            const newStatus = `status: "stopped"\nconfig: "${configPath}"`;
+            await this.exec(`echo '${newStatus}' > ${this.MODULE_PATH}/config/status.yaml`);
+        }
     }
 
     // 获取代理模式
