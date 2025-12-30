@@ -426,3 +426,53 @@ mdui-checkbox:hover::part(control) {
 mdui-checkbox:focus-visible::part(control) {
   outline-color: var(--monet-primary, var(--mdui-color-primary)) !important;
 }
+
+/* ==================== 开关 Switch ==================== */
+
+mdui-switch {
+  /* 覆盖 MDUI switch 的主色为 Monet 主色 */
+  --mdui-color-primary: var(--monet-primary, var(--mdui-color-primary));
+  --mdui-color-on-primary: var(--monet-on-primary, var(--mdui-color-on-primary));
+  --mdui-color-primary-container: var(--monet-primary-container, var(--mdui-color-primary-container));
+  --mdui-color-on-primary-container: var(--monet-on-primary-container, var(--mdui-color-on-primary-container));
+}
+
+/* 开关选中状态 - 轨道使用 Monet 主色 */
+mdui-switch[checked]::part(track) {
+  background-color: var(--monet-primary, var(--mdui-color-primary)) !important;
+  border-color: var(--monet-primary, var(--mdui-color-primary)) !important;
+}
+
+/* 开关选中状态 - 滑块使用 Monet on-primary 色 */
+mdui-switch[checked]::part(thumb) {
+  background-color: var(--monet-on-primary, var(--mdui-color-on-primary)) !important;
+}
+
+/* 开关未选中状态 - 轨道边框颜色 */
+mdui-switch:not([checked])::part(track) {
+  border-color: var(--monet-outline, var(--mdui-color-outline)) !important;
+  background-color: var(--monet-surface-container-highest, var(--mdui-color-surface-container-highest)) !important;
+}
+
+/* 开关未选中状态 - 滑块颜色 */
+mdui-switch:not([checked])::part(thumb) {
+  background-color: var(--monet-outline, var(--mdui-color-outline)) !important;
+}
+
+/* 开关悬停状态 */
+mdui-switch:hover:not([checked])::part(track) {
+  border-color: var(--monet-on-surface, var(--mdui-color-on-surface)) !important;
+}
+
+mdui-switch:hover:not([checked])::part(thumb) {
+  background-color: var(--monet-on-surface-variant, var(--mdui-color-on-surface-variant)) !important;
+}
+
+/* 开关禁用状态 */
+mdui-switch[disabled]::part(track) {
+  opacity: 0.38 !important;
+}
+
+mdui-switch[disabled]::part(thumb) {
+  opacity: 0.38 !important;
+}
