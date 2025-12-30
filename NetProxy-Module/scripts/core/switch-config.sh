@@ -49,15 +49,10 @@ hot_switch() {
         exit 1
     fi
     
-    # 3. 更新 status.conf
-    local current_status
-    current_status=$(grep '^status=' "$STATUS_FILE" | head -1 || echo 'status="running"')
-    {
-        echo "$current_status"
-        echo "config=\"$config_file\""
-    } > "$STATUS_FILE"
+    # 3. 更新 module.conf 中的 CURRENT_CONFIG
+    sed -i "s|^CURRENT_CONFIG=.*|CURRENT_CONFIG=\"$config_file\"|" "$MODDIR/config/module.conf"
     
-    log "INFO" "状态文件已更新"
+    log "INFO" "配置文件已更新"
     log "INFO" "========== 热切换完成 =========="
 }
 

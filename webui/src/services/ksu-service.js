@@ -25,9 +25,15 @@ export class KSUService {
     // 获取服务状态
     static async getStatus() {
         try {
-            const output = await this.exec(`cat ${this.MODULE_PATH}/config/status.conf`);
-            const status = output.match(/status="([^"]+)"/)?.[1] || 'unknown';
-            const config = output.match(/config="([^"]+)"/)?.[1] || '';
+            // 使用 pidof 检测 xray 进程是否运行
+            const pidOutput = await this.exec(`pidof -s /data/adb/modules/netproxy/bin/xray 2>/dev/null || echo`);
+            const isRunning = pidOutput.trim() !== '';
+            const status = isRunning ? 'running' : 'stopped';
+
+            // config 从 module.conf 读取
+            const configOutput = await this.exec(`cat ${this.MODULE_PATH}/config/module.conf 2>/dev/null || echo`);
+            const config = configOutput.match(/CURRENT_CONFIG="([^"]*)"/)?.[1] || '';
+
             return { status, config: config.split('/').pop() };
         } catch (error) {
             return { status: 'unknown', config: '' };
@@ -194,9 +200,8 @@ export class KSUService {
                 throw new Error(result.stderr || '热切换失败');
             }
         } else {
-            // 服务未运行：只更新 status.conf
-            const newStatus = `status="stopped"\nconfig="${configPath}"`;
-            await this.exec(`echo '${newStatus}' > ${this.MODULE_PATH}/config/status.conf`);
+            // 服务未运行：更新 module.conf 中的 CURRENT_CONFIG
+            await this.exec(`sed -i 's|^CURRENT_CONFIG=.*|CURRENT_CONFIG="${configPath}"|' ${this.MODULE_PATH}/config/module.conf`);
         }
     }
 

@@ -5,7 +5,7 @@ set -u
 readonly MODDIR="$(cd "$(dirname "$0")/../.." && pwd)"
 readonly LOG_FILE="$MODDIR/logs/service.log"
 readonly XRAY_BIN="$MODDIR/bin/xray"
-readonly STATUS_FILE="$MODDIR/config/status.conf"
+readonly MODULE_CONF="$MODDIR/config/module.conf"
 readonly XRAY_LOG_FILE="$MODDIR/logs/xray.log"
 readonly CONFDIR="$MODDIR/config/xray/confdir"
 readonly OUTBOUNDS_DIR="$MODDIR/config/xray/outbounds"
@@ -42,20 +42,20 @@ die() {
 }
 
 #######################################
-# 从状态文件获取配置路径
+# 从 module.conf 获取配置路径
 # Returns:
 #   配置文件路径
 #######################################
 get_config_path() {
-    if [ ! -f "$STATUS_FILE" ]; then
-        die "状态文件不存在: $STATUS_FILE" 1
+    if [ ! -f "$MODULE_CONF" ]; then
+        die "模块配置文件不存在: $MODULE_CONF" 1
     fi
     
     local config_path
-    config_path=$(grep '^config=' "$STATUS_FILE" | cut -d'"' -f2)
+    config_path=$(grep '^CURRENT_CONFIG=' "$MODULE_CONF" | cut -d'"' -f2)
     
     if [ -z "$config_path" ]; then
-        die "无法从状态文件解析配置路径" 1
+        die "无法从模块配置解析配置路径" 1
     fi
     
     echo "$config_path"
@@ -65,19 +65,16 @@ get_config_path() {
 
 
 #######################################
-# 更新状态文件
+# 更新 module.conf 中的配置路径
 # Arguments:
 #   $1 - 配置文件路径
 #######################################
 update_status() {
     local config_path="$1"
     
-    {
-        echo "status=\"running\""
-        echo "config=\"$config_path\""
-    } > "$STATUS_FILE"
+    sed -i "s|^CURRENT_CONFIG=.*|CURRENT_CONFIG=\"$config_path\"|" "$MODULE_CONF"
     
-    log "INFO" "状态已更新: running, config: $config_path"
+    log "INFO" "配置已更新: $config_path"
 }
 
 #######################################
