@@ -549,12 +549,14 @@ export class SettingsPageManager {
 
     applyThemeColor(color) {
         localStorage.setItem('themeColor', color);
-        // 如果莫奈取色启用且处于自动模式，不应用手动颜色
+        // 用户手动选择颜色时，需要关闭莫奈取色以使手动颜色生效
         const monetEnabled = localStorage.getItem('monetEnabled') === 'true';
         const savedTheme = localStorage.getItem('theme') || 'auto';
         if (monetEnabled && savedTheme === 'auto') {
             // 禁用莫奈取色，因为用户手动选择了颜色
             localStorage.setItem('monetEnabled', 'false');
+            // 移除 monet-enabled 类
+            document.documentElement.classList.remove('monet-enabled');
             const monetSwitch = document.getElementById('monet-switch');
             if (monetSwitch) {
                 monetSwitch.checked = false;
