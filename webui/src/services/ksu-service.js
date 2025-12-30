@@ -852,6 +852,15 @@ export class KSUService {
         return { success: true };
     }
 
+    // 执行 OnePlus A16 兼容性修复脚本
+    static async executeOneplusFix() {
+        const result = await exec(`su -c "sh ${this.MODULE_PATH}/scripts/utils/oneplus_a16_fix.sh"`);
+        if (result.errno !== 0) {
+            throw new Error(result.stderr || '执行修复脚本失败');
+        }
+        return { success: true };
+    }
+
     // ===================== 路由规则管理 =====================
 
     // 获取路由规则列表

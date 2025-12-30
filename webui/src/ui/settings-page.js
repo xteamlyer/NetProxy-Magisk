@@ -91,7 +91,14 @@ export class SettingsPageManager {
             oneplusFixSwitch.addEventListener('change', async (e) => {
                 try {
                     await KSUService.setModuleSetting('ONEPLUS_A16_FIX', e.target.checked);
-                    toast(`OnePlus A16 兼容性修复已${e.target.checked ? '启用' : '禁用'}`);
+
+                    // 如果启用，立即执行修复脚本
+                    if (e.target.checked) {
+                        await KSUService.executeOneplusFix();
+                        toast('OnePlus A16 兼容性修复已执行');
+                    } else {
+                        toast('OnePlus A16 兼容性修复已禁用');
+                    }
                 } catch (error) {
                     toast('设置失败: ' + error.message, true);
                     e.target.checked = !e.target.checked;
