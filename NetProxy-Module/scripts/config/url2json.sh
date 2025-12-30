@@ -505,6 +505,10 @@ generate_stream_settings() {
     local tls_settings=""
     if [ "$SECURITY" = "tls" ]; then
         tls_settings="\"allowInsecure\": $ALLOW_INSECURE"
+        if [ -n "$FINGERPRINT" ]; then
+            tls_settings="$tls_settings,
+          \"fingerprint\": \"$FINGERPRINT\""
+        fi
         if [ -n "$SNI" ]; then
             tls_settings="$tls_settings,
           \"serverName\": \"$SNI\""
@@ -519,16 +523,7 @@ generate_stream_settings() {
     # TLS 配置
     if [ "$SECURITY" = "tls" ]; then
         stream_settings="$stream_settings,
-        \"security\": \"tls\",
-        \"sockopt\": {
-          \"domainStrategy\": \"UseIP\",
-          \"happyEyeballs\": {
-            \"interleave\": 2,
-            \"maxConcurrentTry\": 4,
-            \"prioritizeIPv6\": false,
-            \"tryDelayMs\": 250
-          }
-        }"
+      \"security\": \"tls\""
     elif [ "$SECURITY" = "reality" ]; then
         # Reality 配置
         stream_settings="$stream_settings,
@@ -619,18 +614,26 @@ generate_stream_settings() {
             ;;
         
         ws)
+            # TLS 需要先添加 tlsSettings
+            if [ "$SECURITY" = "tls" ]; then
+                stream_settings="$stream_settings,
+      \"tlsSettings\": {
+        $tls_settings
+      }"
+            fi
+            
             stream_settings="$stream_settings,
-      \"wsSettings\": {
-        \"path\": \"${PATH_VALUE:-/}\""
+      \"wsSettings\": {"
             
             if [ -n "$HOST" ]; then
-                stream_settings="$stream_settings,
+                stream_settings="$stream_settings
         \"headers\": {
           \"Host\": \"$HOST\"
-        }"
+        },"
             fi
             
             stream_settings="$stream_settings
+        \"path\": \"${PATH_VALUE:-/}\"
       }"
             ;;
         
@@ -908,6 +911,25 @@ EOF
 OUTPUT_FILE="config.json"
 OUTPUT_DIR=""
 PROXY_URL=""
+
+# 初始化查询参数变量
+HOST=""
+NETWORK=""
+SECURITY=""
+SNI=""
+PATH_VALUE=""
+FINGERPRINT=""
+ALLOW_INSECURE="false"
+FLOW=""
+PUBLIC_KEY=""
+SHORT_ID=""
+SPIDER_X=""
+MODE=""
+SERVICE_NAME=""
+AUTHORITY=""
+HEADER_TYPE=""
+SEED=""
+ALPN=""
 
 # 解析命令行参数
 while [ $# -gt 0 ]; do
