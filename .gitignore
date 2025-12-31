@@ -1,1 +1,3 @@
 *.zip
+/NetProxy-Module/webroot/*
+!/NetProxy-Module/webroot/.gitkeep
