@@ -1,115 +1,79 @@
+## 版本 4.0.1（2025-12-30）
 
+## ⚠️ 重要提示（4.0.1）
 
-## 版本 4.0.0（2025-12-30）
+本版本 **已移除 `status.conf`**，并在 `module.conf` 中 **新增 `CURRENT_CONFIG` 字段**，用于记录当前生效的配置文件。
 
----
+由于当前安装脚本 **不会覆盖安装 `config` 目录下的文件**，如果你是从旧版本升级：
 
-### NetProxy 核心功能与架构（by @Fanju6）
+* 现有配置文件 **不会被覆盖**
+* 但 `module.conf` 中 **可能缺少 `CURRENT_CONFIG` 字段**
+* 从而导致部分功能异常（如状态显示、配置切换异常）
 
-* 入站端口逻辑调整
+**解决方式：**
 
-  * 不再从 `nbounds` 配置文件获取
-  * 统一使用默认端口 **12345**
-* NetProxy 专属 WebUI 管理器
-
-  * 可直接打开模块 WebUI
-  * 磁贴支持开启 / 关闭 / 重启，并显示运行状态
-* 全新透明代理实现
-
-  * 提升整体性能与稳定性
-* 应用代理模式重构
-
-  * 黑名单与白名单彻底拆分
-  * 不再共用同一应用列表
-* 代理能力增强
-
-  * 支持移动数据、WiFi 热点、USB 网络共享
-  * 支持 TCP / UDP / IPv6 代理开关
-* 路由与规则能力增强
-
-  * 新增路由规则设置功能
-* 主题与外观配置
-
-  * 新增主题与颜色设置
-  * 支持 12 种主题色
-* 配置与日志系统改进
-
-  * 统一 `config/` 目录下配置文件格式为 `.conf`
-  * 日志页新增 `tproxy.log`、`update.log` 显示
-  * 日志页支持保存日志与配置文件
-* Xray 运行方式调整
-
-  * 使用 `root:net_admin` 用户启动
-* 脚本体系重构
-
-  ```
-  scripts/
-  ├── cli                      # 命令行工具（主入口）
-  ├── core/                    # 核心服务脚本
-  │   ├── start.sh
-  │   ├── stop.sh
-  │   └── switch-config.sh
-  ├── network/                 # 网络 / 代理相关
-  │   └── tproxy.sh
-  │   
-  ├── config/                  # 配置解析
-  │   ├── url2json.sh
-  │   └── subscription.sh
-  └── utils/                   # 工具脚本
-      ├── update-xray.sh
-      └── clean_reject.sh
-  ```
-* 设备与启动相关改进
-
-  * 重命名 `oneplus_a16` 修复脚本
-  * 将修复脚本改为开关控制
-  * 支持模块开机自启动
-* 配置与节点 UI 优化
-
-  * 节点信息左边距缩小
-  * 延迟检测结果显示在节点信息内
-  * 支持显示当前正在使用的节点
-  * 优化配置页整体布局
-* 协议解析修复
-
-  * 修复 Trojan 节点解析问题
+* **推荐方式**：卸载旧版本后重新安装 4.0.1，以确保配置文件完整
+* **手动方式**：从发布的压缩包中，将最新的 `module.conf` 复制到模块目录下的 `config` 目录中
 
 ---
 
-### WebUI（by @seyud）
+### 核心状态管理与服务控制
 
-* WebUI 样式体系重构
+* 重构 Xray 运行状态检测机制
 
-  * `mdui.css` 由本地文件改为通过 npm 引入
-  * 移除本地 `assets/mdui.css`
-  * 调整 `index.html` 中 CSS 加载顺序并添加说明
-* 下拉菜单交互修复
+  * 使用 `pidof -s /data/adb/modules/netproxy/bin/xray` 判断真实运行状态
+  * 状态由「文件记录」改为「进程真实状态」，避免状态不同步问题
+* 配置状态管理重构
 
-  * 增加 `OpenDropdown` 状态管理
-  * 确保同一时间仅打开一个下拉菜单
-* UI 交互与可用性优化
+  * 移除 `status.conf`
+  * 在 `module.conf` 中新增 `CURRENT_CONFIG` 字段，用于记录当前生效配置
+* 启停与配置切换逻辑调整
 
-  * 重构确认对话框结构，宽度限制为 400px
-  * 扩大配置项“更多”按钮点击区域
-* 应用列表显示优化
-
-  * 包名支持自动换行，避免长包名溢出
-  * 优化列表布局与图标间距
-* 应用选择器修复与样式优化
-
-  * 修复复选框点击触发两次状态切换的问题
-  * 列表标题与描述支持换行
-  * 复选框样式适配 Monet 主题颜色
+  * `start.sh`：启动时从 `module.conf` 读取并同步当前配置
+  * `switch-config.sh`：切换配置时更新 `CURRENT_CONFIG`
+  * `stop.sh`：移除所有 `status.conf` 相关逻辑，统一使用 `pidof` 获取进程 ID
+  * WebUI / KSU Service：服务状态统一基于进程检测判断
 
 ---
 
-### CLI 命令行工具（by @hexl）
+### 协议与代理修复
 
-* 新增 NetProxy CLI 管理脚本 `scripts/cli`
-* 支持通过 `adb shell` 管理 NetProxy：
+* 修复 WebSocket（ws）配置缺少 `tlsSettings` 的问题
+* OnePlus A16 兼容性修复
 
-  * 服务控制：`status / start / stop / restart`
-  * 配置管理：`list / switch / current / add / remove / show`
-  * 订阅管理：`list / add / update / update-all / remove`
-  * 代理设置：`mode / apps / add / remove / reload`
+  * 修复修复开关启用后未立即生效的问题
 
+---
+
+### 脚本与系统兼容性优化
+
+* 适配 APatch 的 busybox 路径
+* 简化 `start.sh`
+
+  * 移除无意义的配置写入操作
+* `stop.sh` 改为使用 `pidof` 获取进程 ID
+
+---
+
+### WebUI 与主题系统
+
+* 主题系统增强
+
+  * 新增莫奈取色功能开关
+  * 自动模式下支持系统动态取色
+  * 优化主题颜色标记与应用逻辑
+* 应用代理页面重构
+
+  * 支持多用户显示
+  * 支持显示系统应用
+  * 支持关闭分应用代理设置
+* 新增统一的外部链接打开方法
+* 同步优化相关 UI 组件样式
+
+---
+
+### 依赖升级
+
+* KernelSU：`^2.1.1` → `^3.0.0`
+* MDUI：`^2.0.0` → `^2.1.4`
+* Parcel：`^2.14.0` → `^2.16.3`
