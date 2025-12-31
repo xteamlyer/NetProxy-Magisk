@@ -434,33 +434,41 @@ export class KSUService {
         }
     }
 
-    // 获取实时网速
+    // 缓存上次网络数据
+    static _lastNetBytes = null;
+    static _lastNetTime = 0;
+
+    // 获取实时网速（无阻塞）
     static async getNetworkSpeed() {
         try {
-            const rx1Result = await exec(`awk '/:/ {sum+=$2} END {print sum}' /proc/net/dev`);
-            const tx1Result = await exec(`awk '/:/ {sum+=$10} END {print sum}' /proc/net/dev`);
+            const result = await exec(`awk '/:/ {rx+=$2; tx+=$10} END {print rx, tx}' /proc/net/dev`);
+            if (result.errno !== 0) {
+                return { download: '0 KB/s', upload: '0 KB/s' };
+            }
+            const [rx, tx] = result.stdout.trim().split(/\s+/).map(Number);
+            const now = Date.now();
 
-            if (rx1Result.errno !== 0 || tx1Result.errno !== 0) {
+            if (this._lastNetBytes === null) {
+                // 首次调用，保存数据，返回 0
+                this._lastNetBytes = { rx, tx };
+                this._lastNetTime = now;
                 return { download: '0 KB/s', upload: '0 KB/s' };
             }
 
-            const rx1 = parseInt(rx1Result.stdout.trim()) || 0;
-            const tx1 = parseInt(tx1Result.stdout.trim()) || 0;
+            const elapsed = (now - this._lastNetTime) / 1000; // 秒
+            if (elapsed < 0.5) {
+                // 间隔太短，返回上次值
+                return { download: '0 KB/s', upload: '0 KB/s' };
+            }
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const download = Math.max(0, Math.floor((rx - this._lastNetBytes.rx) / 1024 / elapsed));
+            const upload = Math.max(0, Math.floor((tx - this._lastNetBytes.tx) / 1024 / elapsed));
 
-            const rx2Result = await exec(`awk '/:/ {sum+=$2} END {print sum}' /proc/net/dev`);
-            const tx2Result = await exec(`awk '/:/ {sum+=$10} END {print sum}' /proc/net/dev`);
+            this._lastNetBytes = { rx, tx };
+            this._lastNetTime = now;
 
-            const rx2 = parseInt(rx2Result.stdout.trim()) || 0;
-            const tx2 = parseInt(tx2Result.stdout.trim()) || 0;
-
-            const downloadSpeed = Math.max(0, Math.floor((rx2 - rx1) / 1024));
-            const uploadSpeed = Math.max(0, Math.floor((tx2 - tx1) / 1024));
-
-            return { download: `${downloadSpeed} KB/s`, upload: `${uploadSpeed} KB/s` };
+            return { download: `${download} KB/s`, upload: `${upload} KB/s` };
         } catch (error) {
-            console.error('Failed to get network speed:', error);
             return { download: '0 KB/s', upload: '0 KB/s' };
         }
     }
