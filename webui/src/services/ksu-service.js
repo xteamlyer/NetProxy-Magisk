@@ -855,6 +855,32 @@ export class KSUService {
         await exec(`am start -a android.intent.action.VIEW -d "${url}"`);
     }
 
+    // ===================== DNS 配置管理 =====================
+
+    // 获取 DNS 配置
+    static async getDnsConfig() {
+        try {
+            const output = await this.exec(`cat ${this.MODULE_PATH}/config/xray/confdir/02_dns.json`);
+            return JSON.parse(output);
+        } catch (error) {
+            console.error('获取 DNS 配置失败:', error);
+            return { dns: { hosts: {}, servers: [] } };
+        }
+    }
+
+    // 保存 DNS 配置
+    static async saveDnsConfig(config) {
+        try {
+            const json = JSON.stringify(config, null, 4);
+            const base64 = btoa(unescape(encodeURIComponent(json)));
+            await this.exec(`echo '${base64}' | base64 -d > ${this.MODULE_PATH}/config/xray/confdir/02_dns.json`);
+            return { success: true };
+        } catch (error) {
+            console.error('保存 DNS 配置失败:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // ===================== 路由规则管理 =====================
 
     // 获取路由规则列表

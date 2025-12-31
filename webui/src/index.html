@@ -423,6 +423,14 @@
 
             <mdui-divider></mdui-divider>
 
+            <!-- DNS设置入口 -->
+            <mdui-list-item icon="dns" id="settings-dns-entry">
+              DNS 设置
+              <mdui-icon slot="end-icon" name="chevron_right"></mdui-icon>
+            </mdui-list-item>
+
+            <mdui-divider></mdui-divider>
+
             <!-- 主题设置 -->
             <mdui-list-item icon="palette" id="settings-theme">
               主题与颜色
@@ -508,6 +516,55 @@
 
           <div style="padding: 16px; text-align: center;">
             <mdui-button variant="outlined" id="routing-back-btn" icon="arrow_back">
+              返回设置
+            </mdui-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DNS Settings Page -->
+      <div id="dns-page" class="page">
+        <div class="container">
+          <mdui-card variant="elevated" class="compact-card">
+            <div style="padding: 16px;">
+              <h3 style="margin: 0 0 8px;">DNS 设置</h3>
+              <p style="margin: 0; color: var(--mdui-color-on-surface-variant); font-size: 14px;">
+                管理 DNS 服务器和静态 Hosts 映射
+              </p>
+            </div>
+          </mdui-card>
+
+          <mdui-tabs id="dns-tabs" value="servers" style="margin-top: 16px;">
+            <mdui-tab value="servers">DNS 服务器</mdui-tab>
+            <mdui-tab value="hosts">静态 Hosts</mdui-tab>
+
+            <mdui-tab-panel slot="panel" value="servers">
+              <div style="display: flex; justify-content: flex-end; padding: 12px 0;">
+                <mdui-button id="add-dns-server-btn" icon="add">添加服务器</mdui-button>
+              </div>
+              <mdui-list id="dns-servers-list">
+                <mdui-list-item>
+                  <mdui-circular-progress></mdui-circular-progress>
+                  <span slot="description">加载中...</span>
+                </mdui-list-item>
+              </mdui-list>
+            </mdui-tab-panel>
+
+            <mdui-tab-panel slot="panel" value="hosts">
+              <div style="display: flex; justify-content: flex-end; padding: 12px 0;">
+                <mdui-button id="add-dns-host-btn" icon="add">添加 Host</mdui-button>
+              </div>
+              <mdui-list id="dns-hosts-list">
+                <mdui-list-item>
+                  <mdui-circular-progress></mdui-circular-progress>
+                  <span slot="description">加载中...</span>
+                </mdui-list-item>
+              </mdui-list>
+            </mdui-tab-panel>
+          </mdui-tabs>
+
+          <div style="padding: 16px; text-align: center;">
+            <mdui-button variant="outlined" id="dns-back-btn" icon="arrow_back">
               返回设置
             </mdui-button>
           </div>
@@ -783,6 +840,44 @@
     </div>
     <mdui-button slot="action" variant="text" id="rule-cancel">取消</mdui-button>
     <mdui-button slot="action" variant="filled" id="rule-save">保存</mdui-button>
+  </mdui-dialog>
+
+  <!-- DNS Server Dialog -->
+  <mdui-dialog id="dns-server-dialog" headline="DNS 服务器" close-on-overlay-click="false"
+    style="--mdui-dialog-max-width: 500px;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <mdui-text-field label="服务器地址" id="dns-server-address" placeholder="IP 或 DoH URL"
+        helper="示例: 8.8.8.8 或 https://dns.google/dns-query" style="width: 100%;"></mdui-text-field>
+
+      <mdui-text-field label="域名匹配 (可选)" id="dns-server-domains" placeholder="用逗号分隔"
+        helper="示例: domain:google.com, geosite:cn" style="width: 100%;"></mdui-text-field>
+
+      <mdui-text-field label="期望 IP (可选)" id="dns-server-expect-ips" placeholder="用逗号分隔"
+        helper="示例: geoip:cn, 223.0.0.0/8" style="width: 100%;"></mdui-text-field>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <mdui-switch id="dns-server-skip-fallback"></mdui-switch>
+        <span>跳过 Fallback</span>
+      </div>
+
+      <mdui-text-field label="Tag (可选)" id="dns-server-tag" placeholder="自定义标识" style="width: 100%;"></mdui-text-field>
+    </div>
+    <mdui-button slot="action" variant="text" id="dns-server-cancel">取消</mdui-button>
+    <mdui-button slot="action" variant="filled" id="dns-server-save">保存</mdui-button>
+  </mdui-dialog>
+
+  <!-- DNS Host Dialog -->
+  <mdui-dialog id="dns-host-dialog" headline="静态 Host" close-on-overlay-click="false"
+    style="--mdui-dialog-max-width: 500px;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <mdui-text-field label="域名" id="dns-host-domain" placeholder="域名或 geosite 规则"
+        helper="示例: example.com 或 geosite:category-ads-all" style="width: 100%;"></mdui-text-field>
+
+      <mdui-text-field label="目标 IP" id="dns-host-ip" placeholder="IP 地址，多个用逗号分隔"
+        helper="示例: 127.0.0.1 或 192.168.1.1, 192.168.1.2" style="width: 100%;"></mdui-text-field>
+    </div>
+    <mdui-button slot="action" variant="text" id="dns-host-cancel">取消</mdui-button>
+    <mdui-button slot="action" variant="filled" id="dns-host-save">保存</mdui-button>
   </mdui-dialog>
 
   <script type="module" src="./app.js"></script>

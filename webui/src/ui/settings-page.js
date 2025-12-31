@@ -9,6 +9,9 @@ export class SettingsPageManager {
         this.ui = ui;
         this.routingRules = [];
         this.editingRuleIndex = -1;
+        this.dnsConfig = { dns: { hosts: {}, servers: [] } };
+        this.editingServerIndex = -1;
+        this.editingHostKey = null;
         this.proxyKeys = [
             'proxy_mobile', 'proxy_wifi', 'proxy_hotspot', 'proxy_usb',
             'proxy_tcp', 'proxy_udp', 'proxy_ipv6'
@@ -17,6 +20,7 @@ export class SettingsPageManager {
         this.setupRoutingRulesPage();
         this.setupProxySettingsPage();
         this.setupThemePage();
+        this.setupDnsPage();
         this.applyStoredTheme();
     }
 
@@ -112,6 +116,15 @@ export class SettingsPageManager {
             themeEntry.addEventListener('click', () => {
                 this.ui.switchPage('theme');
                 this.loadThemeSettings();
+            });
+        }
+
+        // DNS 设置入口
+        const dnsEntry = document.getElementById('settings-dns-entry');
+        if (dnsEntry) {
+            dnsEntry.addEventListener('click', () => {
+                this.ui.switchPage('dns');
+                this.loadDnsConfig();
             });
         }
 
@@ -347,6 +360,350 @@ export class SettingsPageManager {
         }
     }
 
+    // ===================== DNS 设置页面 =====================
+
+    setupDnsPage() {
+        // 返回按钮
+        const backBtn = document.getElementById('dns-back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.ui.switchPage('settings');
+            });
+        }
+
+        // 添加服务器按钮
+        const addServerBtn = document.getElementById('add-dns-server-btn');
+        if (addServerBtn) {
+            addServerBtn.addEventListener('click', () => {
+                this.showServerDialog();
+            });
+        }
+
+        // 添加 Host 按钮
+        const addHostBtn = document.getElementById('add-dns-host-btn');
+        if (addHostBtn) {
+            addHostBtn.addEventListener('click', () => {
+                this.showHostDialog();
+            });
+        }
+
+        // 服务器对话框事件
+        const serverCancelBtn = document.getElementById('dns-server-cancel');
+        if (serverCancelBtn) {
+            serverCancelBtn.addEventListener('click', () => {
+                document.getElementById('dns-server-dialog').open = false;
+            });
+        }
+
+        const serverSaveBtn = document.getElementById('dns-server-save');
+        if (serverSaveBtn) {
+            serverSaveBtn.addEventListener('click', () => {
+                this.saveServer();
+            });
+        }
+
+        // Host 对话框事件
+        const hostCancelBtn = document.getElementById('dns-host-cancel');
+        if (hostCancelBtn) {
+            hostCancelBtn.addEventListener('click', () => {
+                document.getElementById('dns-host-dialog').open = false;
+            });
+        }
+
+        const hostSaveBtn = document.getElementById('dns-host-save');
+        if (hostSaveBtn) {
+            hostSaveBtn.addEventListener('click', () => {
+                this.saveHost();
+            });
+        }
+    }
+
+    async loadDnsConfig() {
+        try {
+            this.dnsConfig = await KSUService.getDnsConfig();
+            this.renderDnsServers();
+            this.renderDnsHosts();
+        } catch (error) {
+            console.error('加载 DNS 配置失败:', error);
+            toast('加载 DNS 配置失败');
+        }
+    }
+
+    renderDnsServers() {
+        const listEl = document.getElementById('dns-servers-list');
+        if (!listEl) return;
+
+        const servers = this.dnsConfig.dns?.servers || [];
+        listEl.innerHTML = '';
+
+        if (servers.length === 0) {
+            listEl.innerHTML = `
+                <mdui-list-item>
+                    <span slot="description">暂无 DNS 服务器，点击右上角添加</span>
+                </mdui-list-item>
+            `;
+            return;
+        }
+
+        servers.forEach((server, index) => {
+            const item = document.createElement('mdui-list-item');
+            const isSimple = typeof server === 'string';
+            const address = isSimple ? server : server.address;
+            const domains = isSimple ? [] : (server.domains || []);
+            const tag = isSimple ? '' : (server.tag || '');
+
+            item.setAttribute('headline', address);
+
+            const descParts = [];
+            if (domains.length > 0) descParts.push(`域名: ${domains.slice(0, 2).join(', ')}${domains.length > 2 ? '...' : ''}`);
+            if (tag) descParts.push(`标签: ${tag}`);
+
+            if (descParts.length > 0) {
+                const descSpan = document.createElement('span');
+                descSpan.slot = 'description';
+                descSpan.textContent = descParts.join(' | ');
+                item.appendChild(descSpan);
+            }
+
+            // 编辑/删除操作
+            const endContainer = document.createElement('div');
+            endContainer.slot = 'end-icon';
+            endContainer.style.cssText = 'display: flex; align-items: center; gap: 4px;';
+
+            const dropdown = document.createElement('mdui-dropdown');
+            dropdown.setAttribute('placement', 'bottom-end');
+
+            const menuBtn = document.createElement('mdui-button-icon');
+            menuBtn.setAttribute('slot', 'trigger');
+            menuBtn.setAttribute('icon', 'more_vert');
+            menuBtn.addEventListener('click', (e) => e.stopPropagation());
+            dropdown.appendChild(menuBtn);
+
+            const menu = document.createElement('mdui-menu');
+
+            const editItem = document.createElement('mdui-menu-item');
+            editItem.innerHTML = '<mdui-icon slot="icon" name="edit"></mdui-icon>编辑';
+            editItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.open = false;
+                this.showServerDialog(server, index);
+            });
+            menu.appendChild(editItem);
+
+            const deleteItem = document.createElement('mdui-menu-item');
+            deleteItem.innerHTML = '<mdui-icon slot="icon" name="delete"></mdui-icon>删除';
+            deleteItem.style.color = 'var(--mdui-color-error)';
+            deleteItem.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                dropdown.open = false;
+                if (await this.ui.confirm(`确定要删除服务器 "${address}" 吗？`)) {
+                    this.dnsConfig.dns.servers.splice(index, 1);
+                    await this.saveDnsToBackend();
+                    this.renderDnsServers();
+                }
+            });
+            menu.appendChild(deleteItem);
+
+            dropdown.appendChild(menu);
+            endContainer.appendChild(dropdown);
+            item.appendChild(endContainer);
+
+            listEl.appendChild(item);
+        });
+    }
+
+    renderDnsHosts() {
+        const listEl = document.getElementById('dns-hosts-list');
+        if (!listEl) return;
+
+        const hosts = this.dnsConfig.dns?.hosts || {};
+        const hostKeys = Object.keys(hosts);
+        listEl.innerHTML = '';
+
+        if (hostKeys.length === 0) {
+            listEl.innerHTML = `
+                <mdui-list-item>
+                    <span slot="description">暂无静态 Host，点击右上角添加</span>
+                </mdui-list-item>
+            `;
+            return;
+        }
+
+        hostKeys.forEach((domain) => {
+            const item = document.createElement('mdui-list-item');
+            const value = hosts[domain];
+            const ips = Array.isArray(value) ? value : [value];
+
+            item.setAttribute('headline', domain);
+
+            const descSpan = document.createElement('span');
+            descSpan.slot = 'description';
+            descSpan.textContent = ips.slice(0, 3).join(', ') + (ips.length > 3 ? '...' : '');
+            item.appendChild(descSpan);
+
+            // 编辑/删除操作
+            const endContainer = document.createElement('div');
+            endContainer.slot = 'end-icon';
+            endContainer.style.cssText = 'display: flex; align-items: center; gap: 4px;';
+
+            const dropdown = document.createElement('mdui-dropdown');
+            dropdown.setAttribute('placement', 'bottom-end');
+
+            const menuBtn = document.createElement('mdui-button-icon');
+            menuBtn.setAttribute('slot', 'trigger');
+            menuBtn.setAttribute('icon', 'more_vert');
+            menuBtn.addEventListener('click', (e) => e.stopPropagation());
+            dropdown.appendChild(menuBtn);
+
+            const menu = document.createElement('mdui-menu');
+
+            const editItem = document.createElement('mdui-menu-item');
+            editItem.innerHTML = '<mdui-icon slot="icon" name="edit"></mdui-icon>编辑';
+            editItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.open = false;
+                this.showHostDialog(domain, value);
+            });
+            menu.appendChild(editItem);
+
+            const deleteItem = document.createElement('mdui-menu-item');
+            deleteItem.innerHTML = '<mdui-icon slot="icon" name="delete"></mdui-icon>删除';
+            deleteItem.style.color = 'var(--mdui-color-error)';
+            deleteItem.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                dropdown.open = false;
+                if (await this.ui.confirm(`确定要删除 Host "${domain}" 吗？`)) {
+                    delete this.dnsConfig.dns.hosts[domain];
+                    await this.saveDnsToBackend();
+                    this.renderDnsHosts();
+                }
+            });
+            menu.appendChild(deleteItem);
+
+            dropdown.appendChild(menu);
+            endContainer.appendChild(dropdown);
+            item.appendChild(endContainer);
+
+            listEl.appendChild(item);
+        });
+    }
+
+    showServerDialog(server = null, index = -1) {
+        this.editingServerIndex = index;
+        const dialog = document.getElementById('dns-server-dialog');
+        dialog.headline = server ? '编辑服务器' : '添加服务器';
+
+        const isSimple = typeof server === 'string';
+        const address = server ? (isSimple ? server : server.address) : '';
+        const domains = server && !isSimple ? (server.domains || []).join(', ') : '';
+        const expectIPs = server && !isSimple ? (server.expectIPs || []).join(', ') : '';
+        const skipFallback = server && !isSimple ? !!server.skipFallback : false;
+        const tag = server && !isSimple ? (server.tag || '') : '';
+
+        document.getElementById('dns-server-address').value = address;
+        document.getElementById('dns-server-domains').value = domains;
+        document.getElementById('dns-server-expect-ips').value = expectIPs;
+        document.getElementById('dns-server-skip-fallback').checked = skipFallback;
+        document.getElementById('dns-server-tag').value = tag;
+
+        dialog.open = true;
+    }
+
+    showHostDialog(domain = null, value = null) {
+        this.editingHostKey = domain;
+        const dialog = document.getElementById('dns-host-dialog');
+        dialog.headline = domain ? '编辑 Host' : '添加 Host';
+
+        const ips = value ? (Array.isArray(value) ? value.join(', ') : value) : '';
+
+        document.getElementById('dns-host-domain').value = domain || '';
+        document.getElementById('dns-host-ip').value = ips;
+
+        dialog.open = true;
+    }
+
+    async saveServer() {
+        const address = document.getElementById('dns-server-address').value.trim();
+        const domainsStr = document.getElementById('dns-server-domains').value.trim();
+        const expectIPsStr = document.getElementById('dns-server-expect-ips').value.trim();
+        const skipFallback = document.getElementById('dns-server-skip-fallback').checked;
+        const tag = document.getElementById('dns-server-tag').value.trim();
+
+        if (!address) {
+            toast('请输入服务器地址');
+            return;
+        }
+
+        const domains = domainsStr ? domainsStr.split(',').map(d => d.trim()).filter(d => d) : [];
+        const expectIPs = expectIPsStr ? expectIPsStr.split(',').map(i => i.trim()).filter(i => i) : [];
+
+        let server;
+        if (!domains.length && !expectIPs.length && !skipFallback && !tag) {
+            server = address;
+        } else {
+            server = { address };
+            if (domains.length) server.domains = domains;
+            if (expectIPs.length) server.expectIPs = expectIPs;
+            if (skipFallback) server.skipFallback = true;
+            if (tag) server.tag = tag;
+        }
+
+        if (!this.dnsConfig.dns) this.dnsConfig.dns = { hosts: {}, servers: [] };
+        if (!this.dnsConfig.dns.servers) this.dnsConfig.dns.servers = [];
+
+        if (this.editingServerIndex >= 0) {
+            this.dnsConfig.dns.servers[this.editingServerIndex] = server;
+        } else {
+            this.dnsConfig.dns.servers.push(server);
+        }
+
+        await this.saveDnsToBackend();
+        this.renderDnsServers();
+        document.getElementById('dns-server-dialog').open = false;
+        toast(this.editingServerIndex >= 0 ? '服务器已更新' : '服务器已添加');
+    }
+
+    async saveHost() {
+        const domain = document.getElementById('dns-host-domain').value.trim();
+        const ipStr = document.getElementById('dns-host-ip').value.trim();
+
+        if (!domain) {
+            toast('请输入域名');
+            return;
+        }
+        if (!ipStr) {
+            toast('请输入目标 IP');
+            return;
+        }
+
+        const ips = ipStr.split(',').map(i => i.trim()).filter(i => i);
+        const value = ips.length === 1 ? ips[0] : ips;
+
+        if (!this.dnsConfig.dns) this.dnsConfig.dns = { hosts: {}, servers: [] };
+        if (!this.dnsConfig.dns.hosts) this.dnsConfig.dns.hosts = {};
+
+        // 如果是编辑且域名改变了，删除旧的
+        if (this.editingHostKey && this.editingHostKey !== domain) {
+            delete this.dnsConfig.dns.hosts[this.editingHostKey];
+        }
+
+        this.dnsConfig.dns.hosts[domain] = value;
+
+        await this.saveDnsToBackend();
+        this.renderDnsHosts();
+        document.getElementById('dns-host-dialog').open = false;
+        toast(this.editingHostKey ? 'Host 已更新' : 'Host 已添加');
+    }
+
+    async saveDnsToBackend() {
+        try {
+            await KSUService.saveDnsConfig(this.dnsConfig);
+        } catch (error) {
+            console.error('保存 DNS 配置失败:', error);
+            toast('保存失败: ' + error.message);
+        }
+    }
+
     // ===================== 代理设置页面 =====================
 
     setupProxySettingsPage() {
@@ -518,11 +875,11 @@ export class SettingsPageManager {
 
     applyThemeColor(color) {
         localStorage.setItem('themeColor', color);
-        
+
         const monetEnabled = localStorage.getItem('monetEnabled') === 'true';
         const savedTheme = localStorage.getItem('theme') || 'auto';
         const isAutoMode = savedTheme === 'auto';
-        
+
         if (isAutoMode && !monetEnabled) {
             const root = document.documentElement;
             root.style.setProperty('--monet-primary', color);
@@ -532,7 +889,7 @@ export class SettingsPageManager {
             root.style.setProperty('--monet-secondary-container', color + '30');
             root.style.setProperty('--monet-on-secondary-container', color);
         }
-        
+
         setColorScheme(color);
         this.updateMonetToggleState();
         toast('主题色已更改');
