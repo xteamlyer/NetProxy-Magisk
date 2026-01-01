@@ -882,6 +882,38 @@ export class SettingsPageManager {
     applyThemeMode(mode) {
         localStorage.setItem('theme', mode);
         setTheme(mode);
+
+        const savedColor = localStorage.getItem('themeColor');
+        const html = document.documentElement;
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (mode === 'light' || mode === 'dark') {
+            // 浅色或深色模式：手动设置 CSS 变量以应用主题色
+            if (savedColor) {
+                html.style.setProperty('--monet-primary', savedColor);
+                html.style.setProperty('--monet-primary-container', savedColor + '30');
+                html.style.setProperty('--monet-on-primary', '#ffffff');
+                html.style.setProperty('--monet-on-primary-container', savedColor);
+                html.style.setProperty('--monet-secondary-container', savedColor + '30');
+                html.style.setProperty('--monet-on-secondary-container', savedColor);
+            }
+            setColorScheme(savedColor || '#6750A4');
+        } else {
+            // 自动模式：根据莫奈取色设置处理
+            const monetEnabled = localStorage.getItem('monetEnabled') === 'true';
+            if (!monetEnabled && savedColor) {
+                html.classList.remove('mdui-theme-auto');
+                html.classList.add(isDark ? 'mdui-theme-dark' : 'mdui-theme-light');
+                html.style.setProperty('--monet-primary', savedColor);
+                html.style.setProperty('--monet-primary-container', savedColor + '30');
+                html.style.setProperty('--monet-on-primary', '#ffffff');
+                html.style.setProperty('--monet-on-primary-container', savedColor);
+                html.style.setProperty('--monet-secondary-container', savedColor + '30');
+                html.style.setProperty('--monet-on-secondary-container', savedColor);
+                setColorScheme(savedColor);
+            }
+        }
+
         this.updateMonetToggleState();
         toast(`已切换到${mode === 'auto' ? '自动' : mode === 'light' ? '浅色' : '深色'}模式`);
     }
@@ -893,7 +925,8 @@ export class SettingsPageManager {
         const savedTheme = localStorage.getItem('theme') || 'auto';
         const isAutoMode = savedTheme === 'auto';
 
-        if (isAutoMode && !monetEnabled) {
+        // 非自动模式（浅色/深色），或者自动模式下莫奈取色关闭时，手动设置 CSS 变量
+        if (!isAutoMode || (isAutoMode && !monetEnabled)) {
             const root = document.documentElement;
             root.style.setProperty('--monet-primary', color);
             root.style.setProperty('--monet-primary-container', color + '30');
@@ -932,6 +965,16 @@ export class SettingsPageManager {
             html.classList.add(isDark ? 'mdui-theme-dark' : 'mdui-theme-light');
 
             // 自动模式 + 莫奈取色关闭：手动设置 Monet 变量以应用用户选择的主题色
+            if (savedColor) {
+                html.style.setProperty('--monet-primary', savedColor);
+                html.style.setProperty('--monet-primary-container', savedColor + '30');
+                html.style.setProperty('--monet-on-primary', '#ffffff');
+                html.style.setProperty('--monet-on-primary-container', savedColor);
+                html.style.setProperty('--monet-secondary-container', savedColor + '30');
+                html.style.setProperty('--monet-on-secondary-container', savedColor);
+            }
+        } else {
+            // 浅色或深色模式：手动设置 Monet 变量以应用用户选择的主题色
             if (savedColor) {
                 html.style.setProperty('--monet-primary', savedColor);
                 html.style.setProperty('--monet-primary-container', savedColor + '30');
