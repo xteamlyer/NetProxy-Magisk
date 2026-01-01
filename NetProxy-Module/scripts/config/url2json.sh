@@ -477,6 +477,12 @@ parse_query_params() {
             seed) SEED="$value" ;;
             flow) FLOW="$value" ;;
             spx) SPIDER_X="$value" ;;
+            extra)
+                # extra 包含 JSON 格式的自定义配置
+                # 提取 headers 和 xmux
+                EXTRA_HEADERS=$(echo "$value" | grep -o '"headers"[[:space:]]*:[[:space:]]*{[^}]*}' | sed 's/"headers"[[:space:]]*:[[:space:]]*//')
+                EXTRA_XMUX=$(echo "$value" | grep -o '"xmux"[[:space:]]*:[[:space:]]*{[^}]*}' | sed 's/"xmux"[[:space:]]*:[[:space:]]*//')
+                ;;
             insecure|allowInsecure) 
                 if [ "$value" = "1" ]; then
                     ALLOW_INSECURE="true"
@@ -638,11 +644,32 @@ generate_stream_settings() {
             ;;
         
         xhttp)
+            # TLS 需要先添加 tlsSettings
+            if [ "$SECURITY" = "tls" ]; then
+                stream_settings="$stream_settings,
+      \"tlsSettings\": {
+        $tls_settings
+      }"
+            fi
+            
             stream_settings="$stream_settings,
       \"xhttpSettings\": {
         \"host\": \"${HOST:-}\",
         \"mode\": \"${MODE:-auto}\",
-        \"path\": \"${PATH_VALUE:-/}\"
+        \"path\": \"${PATH_VALUE:-/}\""
+            
+            # 支持 extra 参数 (自定义 headers 和 xmux)
+            if [ -n "$EXTRA_HEADERS" ]; then
+                stream_settings="$stream_settings,
+        \"headers\": $EXTRA_HEADERS"
+            fi
+            
+            if [ -n "$EXTRA_XMUX" ]; then
+                stream_settings="$stream_settings,
+        \"xmux\": $EXTRA_XMUX"
+            fi
+            
+            stream_settings="$stream_settings
       }"
             ;;
         
