@@ -9,11 +9,11 @@ export class ConfigPageManager {
         this.ui = ui;
         this.currentOpenDropdown = null;
         this._tabEventBound = false; // 防止重复绑定 tab 事件
-        // 缓存数据，避免重复加载
         this._cachedGroups = null;
         this._cachedCurrentConfig = null;
         this._cachedConfigInfos = new Map(); // groupName -> Map<filename, info>
         this._loadingChunks = new Set(); // 防止并发加载同一 chunk
+        this._selectedTab = null; // 持久化当前选中的 tab
 
         // 懒加载观察器
         this.observer = new IntersectionObserver((entries) => {
@@ -69,18 +69,21 @@ export class ConfigPageManager {
     }
 
     // 刷新数据并渲染（首次加载或手动刷新时调用）
-    async update() {
+    async update(forceRefresh = false) {
         try {
+            // 如果已有缓存且不是强制刷新，直接渲染（页面切换回来时使用缓存）
+            if (!forceRefresh && this._cachedGroups && this._cachedGroups.length > 0) {
+                await this.render();
+                return;
+            }
+
             // 1. 获取目录结构（快速，无详情）
             const groups = await KSUService.getConfigStructure();
 
-            // 2. 更新缓存（保留旧的详情缓存以防闪烁？或者直接清空以保证一致性？）
-            // 用户要求刷新，应该清空详情
+            // 2. 更新缓存
             this._cachedGroups = groups;
             const { config } = await KSUService.getStatus();
             this._cachedCurrentConfig = config;
-            // 注意：不再清空 _cachedConfigInfos，只在必要时更新
-            // 但如果用户强制刷新，可能需要处理。这里暂且不清空，依靠后续逻辑更新
 
             // 3. 立即渲染结构
             await this.render();
@@ -209,9 +212,24 @@ export class ConfigPageManager {
         }
 
         // 保存当前选中的 tab
-        const currentTab = tabsEl.value || this._cachedGroups[0]?.name || 'default';
+        const currentTab = this._selectedTab || this._cachedGroups[0]?.name || 'default';
 
-        // 清空并重建 tabs
+        // 检查现有 tabs 是否匹配缓存（如果匹配则跳过重建，只刷新内容）
+        const existingTabs = tabsEl.querySelectorAll('mdui-tab');
+        const existingNames = Array.from(existingTabs).map(t => t.value);
+        const cachedNames = this._cachedGroups.map(g => g.name);
+        const tabsMatch = existingNames.length === cachedNames.length &&
+            existingNames.every((name, i) => name === cachedNames[i]);
+
+        if (tabsMatch && existingNames.length > 0 && existingNames[0] !== 'loading') {
+            // Tabs 结构匹配，只刷新当前 tab 的内容
+            const validTab = this._cachedGroups.find(g => g.name === currentTab) ? currentTab : this._cachedGroups[0]?.name;
+            this._selectedTab = validTab;
+            await this.renderActiveTab(validTab);
+            return;
+        }
+
+        // 清空并重建 tabs（首次加载或结构变化时）
         tabsEl.innerHTML = '';
 
         // 1. 创建所有 tab 标签
@@ -290,19 +308,33 @@ export class ConfigPageManager {
 
         // 3. 恢复选中状态
         const validTab = this._cachedGroups.find(g => g.name === currentTab) ? currentTab : this._cachedGroups[0]?.name;
-        tabsEl.value = validTab;
+        this._selectedTab = validTab; // 保存到实例变量
 
-        // 4. 为当前 tab 加载并渲染内容
-        await this.renderActiveTab(validTab);
+        // 延迟激活 tab - 使用点击方式更可靠
+        requestAnimationFrame(() => {
+            setTimeout(async () => {
+                if (validTab) {
+                    // 找到并点击目标 tab
+                    const targetTab = tabsEl.querySelector(`mdui-tab[value="${validTab}"]`);
+                    if (targetTab) {
+                        targetTab.click();
+                    }
+                    // 为当前 tab 加载并渲染内容
+                    await this.renderActiveTab(validTab);
+                }
+            }, 100);
+        });
 
-        // 5. 绑定 tab 切换事件（只绑定一次）
-        if (!this._tabEventBound) {
-            tabsEl.addEventListener('change', async (e) => {
-                const newTab = e.target.value;
-                await this.renderActiveTab(newTab);
-            });
-            this._tabEventBound = true;
+        // 5. 绑定 tab 切换事件（每次重新绑定，先移除旧的）
+        if (this._tabChangeHandler) {
+            tabsEl.removeEventListener('change', this._tabChangeHandler);
         }
+        this._tabChangeHandler = async (e) => {
+            const newTab = e.target.value;
+            this._selectedTab = newTab;
+            await this.renderActiveTab(newTab);
+        };
+        tabsEl.addEventListener('change', this._tabChangeHandler);
     }
 
     // 渲染当前激活的 tab 内容
