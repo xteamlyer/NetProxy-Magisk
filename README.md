@@ -38,9 +38,10 @@
 ## 🖼️ 界面预览
 
 <div align="center">
-  <img src="Screenshots/Screenshot1.png" width="30%" alt="状态页面" />
-  <img src="Screenshots/Screenshot2.png" width="30%" alt="配置管理" />
-  <img src="Screenshots/Screenshot3.png" width="30%" alt="应用控制" />
+  <img src="Screenshots/Screenshot1.jpg" width="24%" alt="状态页面" />
+  <img src="Screenshots/Screenshot2.jpg" width="24%" alt="节点管理" />
+  <img src="Screenshots/Screenshot3.jpg" width="24%" alt="应用控制" />
+  <img src="Screenshots/Screenshot4.jpg" width="24%" alt="设置页面" />
 </div>
 
 ---
