@@ -207,7 +207,7 @@ export class ConfigPageManager {
         if (!tabsEl) return;
 
         if (!this._cachedGroups || this._cachedGroups.length === 0) {
-            tabsEl.innerHTML = '<mdui-tab value="empty">暂无配置</mdui-tab><mdui-tab-panel slot="panel" value="empty"><p style="padding: 16px; text-align: center;">暂无配置文件</p></mdui-tab-panel>';
+            tabsEl.innerHTML = '<mdui-tab value="empty">暂无节点</mdui-tab><mdui-tab-panel slot="panel" value="empty"><p style="padding: 16px; text-align: center;">暂无节点</p></mdui-tab-panel>';
             return;
         }
 
@@ -547,7 +547,7 @@ export class ConfigPageManager {
 
     async deleteConfig(fullPath, displayName) {
         try {
-            const confirmed = await this.ui.confirm(`确定要删除配置文件 "${displayName}" 吗？\n\n此操作不可恢复。`);
+            const confirmed = await this.ui.confirm(`确定要删除节点 "${displayName}" 吗？\n\n此操作不可恢复。`);
             if (!confirmed) return;
 
             const result = await KSUService.deleteConfig(fullPath);
