@@ -1,4 +1,4 @@
-import { exec, getPackagesInfo } from 'kernelsu';
+import { exec, spawn, getPackagesInfo } from 'kernelsu';
 import { toast } from '../utils/toast.js';
 
 /**
@@ -614,18 +614,56 @@ EOF
         }
     }
 
-    // 获取ping延迟
-    static async getPingLatency(host) {
-        try {
-            const { stdout } = await exec(`ping -c 1 -W 1 ${host}`);
-            const match = stdout.match(/time=([\d.]+)\s*ms/);
-            if (match) {
-                return `${Math.round(parseFloat(match[1]))} ms`;
+    // 获取ping延迟（使用 spawn 真正非阻塞）
+    static getPingLatency(host) {
+        return new Promise((resolve) => {
+            let output = '';
+            let resolved = false;
+
+            // 设置超时保护
+            const timeout = setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    resolve('超时');
+                }
+            }, 3000);
+
+            try {
+                const ping = spawn('ping', ['-c', '1', '-W', '2', host]);
+
+                ping.stdout.on('data', (data) => {
+                    output += data;
+                });
+
+                ping.on('exit', (code) => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeout);
+
+                    if (code === 0 && output) {
+                        const match = output.match(/time=([\d.]+)\s*ms/);
+                        if (match) {
+                            resolve(`${Math.round(parseFloat(match[1]))} ms`);
+                            return;
+                        }
+                    }
+                    resolve('超时');
+                });
+
+                ping.on('error', () => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeout);
+                    resolve('失败');
+                });
+            } catch (e) {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timeout);
+                    resolve('失败');
+                }
             }
-            return '超时';
-        } catch {
-            return '失败';
-        }
+        });
     }
 
     // 获取已安装应用列表
