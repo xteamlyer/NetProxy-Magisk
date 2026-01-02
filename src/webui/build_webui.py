@@ -6,7 +6,7 @@ import io
 
 # 项目路径配置
 WEBUI_DIR = os.path.dirname(os.path.abspath(__file__))
-TARGET_DIR = os.path.abspath(os.path.join(WEBUI_DIR, "..", "NetProxy-Module", "webroot"))
+TARGET_DIR = os.path.abspath(os.path.join(WEBUI_DIR, "..", "module", "webroot"))
 PARCEL_CACHE_DIR = os.path.join(WEBUI_DIR, ".parcel-cache")
 
 def run_command(cmd, cwd=None):
