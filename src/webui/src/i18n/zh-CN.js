@@ -220,6 +220,7 @@ export default {
     'routing.toast_no_domains': '未找到有效的域名规则',
     'routing.toast_imported': '导入成功，共 {count} 条规则',
     'routing.toast_import_failed': '导入失败: ',
+    'routing.toast_reordered': '规则顺序已更新',
 
     // DNS Page
     'dns.title': 'DNS 设置',

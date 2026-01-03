@@ -233,9 +233,11 @@ export class SettingsPageManager {
 
         this.routingRules.forEach((rule, index) => {
             const item = document.createElement('mdui-list-item');
+            item.setAttribute('data-index', index);
+            item.setAttribute('draggable', 'true');
+            item.style.cursor = 'grab';
 
-            // 构建描述
-            // 构建描述
+
             const parts = [];
             if (rule.domain) parts.push(`${I18nService.t('settings.routing.domain')}: ${rule.domain}`);
             if (rule.ip) parts.push(`${I18nService.t('settings.routing.ip')}: ${rule.ip}`);
@@ -245,6 +247,13 @@ export class SettingsPageManager {
 
             const description = parts.length > 0 ? parts.join(' | ') : I18nService.t('settings.routing.unconditional');
             const outboundLabel = { proxy: I18nService.t('settings.routing.outbound_proxy'), direct: I18nService.t('settings.routing.outbound_direct'), block: I18nService.t('settings.routing.outbound_block') }[rule.outboundTag] || rule.outboundTag;
+
+            // 拖拽手柄
+            const dragHandle = document.createElement('mdui-icon');
+            dragHandle.setAttribute('slot', 'icon');
+            dragHandle.setAttribute('name', 'drag_indicator');
+            dragHandle.style.cssText = 'cursor: grab; color: var(--mdui-color-on-surface-variant);';
+            item.appendChild(dragHandle);
 
             item.setAttribute('headline', rule.name || `${I18nService.t('settings.routing.rule_prefix')}${index + 1}`);
 
@@ -321,9 +330,115 @@ export class SettingsPageManager {
             endContainer.appendChild(dropdown);
             item.appendChild(endContainer);
 
+            // 触摸拖拽事件 (移动端)
+            let touchStartY = 0;
+            let touchCurrentY = 0;
+            let isDragging = false;
+            let dragTimeout = null;
+
+            item.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                // 长按 300ms 后开始拖拽
+                dragTimeout = setTimeout(() => {
+                    isDragging = true;
+                    item.style.opacity = '0.5';
+                    item.style.background = 'var(--mdui-color-surface-container-highest)';
+                    this.draggedIndex = index;
+                }, 300);
+            }, { passive: true });
+
+            item.addEventListener('touchmove', (e) => {
+                if (!isDragging) {
+                    // 如果移动距离过大，取消长按
+                    const moveY = Math.abs(e.touches[0].clientY - touchStartY);
+                    if (moveY > 10 && dragTimeout) {
+                        clearTimeout(dragTimeout);
+                        dragTimeout = null;
+                    }
+                    return;
+                }
+                e.preventDefault();
+                touchCurrentY = e.touches[0].clientY;
+
+                // 查找目标元素
+                const elements = document.elementsFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                const targetItem = elements.find(el => el.tagName === 'MDUI-LIST-ITEM' && el !== item);
+
+                // 清除所有指示线
+                listEl.querySelectorAll('mdui-list-item').forEach(el => {
+                    el.style.borderTop = '';
+                    el.style.borderBottom = '';
+                });
+
+                if (targetItem) {
+                    const targetIndex = parseInt(targetItem.getAttribute('data-index'), 10);
+                    if (targetIndex < index) {
+                        targetItem.style.borderTop = '2px solid var(--mdui-color-primary)';
+                    } else {
+                        targetItem.style.borderBottom = '2px solid var(--mdui-color-primary)';
+                    }
+                }
+            }, { passive: false });
+
+            item.addEventListener('touchend', async (e) => {
+                if (dragTimeout) {
+                    clearTimeout(dragTimeout);
+                    dragTimeout = null;
+                }
+
+                if (!isDragging) return;
+
+                isDragging = false;
+                item.style.opacity = '1';
+                item.style.background = '';
+
+                // 清除所有指示线
+                listEl.querySelectorAll('mdui-list-item').forEach(el => {
+                    el.style.borderTop = '';
+                    el.style.borderBottom = '';
+                });
+
+                // 查找放置目标
+                const touch = e.changedTouches[0];
+                const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+                const targetItem = elements.find(el => el.tagName === 'MDUI-LIST-ITEM' && el !== item);
+
+                if (targetItem) {
+                    const toIndex = parseInt(targetItem.getAttribute('data-index'), 10);
+                    if (this.draggedIndex !== toIndex) {
+                        await this.moveRule(this.draggedIndex, toIndex);
+                    }
+                }
+                this.draggedIndex = null;
+            });
+
+            item.addEventListener('touchcancel', () => {
+                if (dragTimeout) {
+                    clearTimeout(dragTimeout);
+                    dragTimeout = null;
+                }
+                isDragging = false;
+                item.style.opacity = '1';
+                item.style.background = '';
+                listEl.querySelectorAll('mdui-list-item').forEach(el => {
+                    el.style.borderTop = '';
+                    el.style.borderBottom = '';
+                });
+            });
+
             listEl.appendChild(item);
         });
     }
+
+    // 移动规则
+    async moveRule(fromIndex, toIndex) {
+        const [movedRule] = this.routingRules.splice(fromIndex, 1);
+        this.routingRules.splice(toIndex, 0, movedRule);
+        await this.saveRulesToBackend();
+        this.renderRoutingRules();
+        toast(I18nService.t('routing.toast_reordered'));
+    }
+
 
     showRuleDialog(rule = null, index = -1) {
         this.editingRuleIndex = index;

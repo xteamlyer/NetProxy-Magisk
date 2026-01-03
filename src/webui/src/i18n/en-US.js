@@ -220,6 +220,7 @@ export default {
     'routing.toast_no_domains': 'No valid domain rules found',
     'routing.toast_imported': 'Import successful, {count} rules added',
     'routing.toast_import_failed': 'Import failed: ',
+    'routing.toast_reordered': 'Rule order updated',
 
     // DNS Page
     'dns.title': 'DNS Settings',
