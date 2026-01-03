@@ -33,12 +33,9 @@ hot_switch() {
     log "INFO" "========== 开始热切换配置 =========="
     log "INFO" "新配置: $config_file"
     
-    # 1. 删除现有出站 (proxy, direct, block)
-    log "INFO" "删除现有出站..."
-    for tag in proxy direct block; do
-        "$XRAY_BIN" api rmo --server="$API_SERVER" "$tag" 2>/dev/null || true
-        log "INFO" "已删除出站: $tag"
-    done
+    # 1. 删除现有 proxy 出站
+    log "INFO" "删除 proxy 出站..."
+    "$XRAY_BIN" api rmo --server="$API_SERVER" "proxy" 2>/dev/null || true
     
     # 2. 添加新出站
     log "INFO" "添加新出站..."
