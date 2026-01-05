@@ -42,7 +42,7 @@ export default {
 
     // Navigation
     'nav.status': '状态',
-    'nav.config': '配置',
+    'nav.config': '节点',
     'nav.logs': '日志',
     'nav.settings': '设置',
     'nav.uids': '应用代理',
