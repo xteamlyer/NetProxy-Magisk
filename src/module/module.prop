@@ -1,6 +1,6 @@
 id=netproxy
 name=NetProxy
-version=v4.0.4
+version=v4.0.5
 versionCode=14
 author=Fanju
 description=基于Xray内核的代理工具
