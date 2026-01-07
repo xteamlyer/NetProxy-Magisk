@@ -109,15 +109,7 @@ export class UI {
             });
         }
 
-        const clearDebugBtn = document.getElementById('clear-debug-btn');
-        if (clearDebugBtn) {
-            clearDebugBtn.addEventListener('click', () => {
-                if (typeof (window as any).debugLogger !== 'undefined') {
-                    (window as any).debugLogger.clear();
-                }
-                toast(I18nService.t('logs.debug_cleared'));
-            });
-        }
+
     }
 
     switchPage(pageName: string): void {
@@ -148,9 +140,7 @@ export class UI {
             if (pageName === 'config') this.configPage.update();
             if (pageName === 'uid') this.appPage.update();
             if (pageName === 'logs') this.logsPage.update();
-            if (pageName === 'debug' && typeof (window as any).debugLogger !== 'undefined') {
-                (window as any).debugLogger.updateUI();
-            }
+
         }, 200);
     }
 
