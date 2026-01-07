@@ -178,8 +178,6 @@ const enUS: Record<string, string> = {
 
     'common.enabled': 'Enabled',
     'common.disabled': 'Disabled',
-    'common.edit': 'Edit',
-    'common.delete': 'Delete',
     'common.save_failed': 'Save failed: ',
     'common.set_failed': 'Set failed: ',
     'settings.language.auto': 'Auto',
@@ -310,9 +308,6 @@ const enUS: Record<string, string> = {
     'settings.theme.color_desc': 'Pick a color',
     'settings.monet.title': 'Monet Color',
     'settings.monet.desc': 'Extract from wallpaper (Auto mode only)',
-    'settings.theme.auto': 'Auto',
-    'settings.theme.light': 'Light',
-    'settings.theme.dark': 'Dark',
 
     // Status Page Labels
     'status.latency_baidu': 'Baidu',
@@ -387,8 +382,6 @@ const enUS: Record<string, string> = {
     'uid.user_label': 'User',
     'uid.toast_proxy_disabled': 'Per-app proxy disabled',
     'uid.toast_mode_switched': 'Switched to ',
-    'uid.mode_blacklist': 'Blacklist',
-    'uid.mode_whitelist': 'Whitelist',
     'uid.confirm_remove': 'Are you sure to remove {name}?',
     'uid.toast_removed': 'Removed',
     'uid.toast_remove_failed': 'Failed to remove: ',
@@ -398,7 +391,6 @@ const enUS: Record<string, string> = {
     'uid.no_apps_found': 'No apps found',
 
     'status.service_stopping': 'Stopping service...',
-    'status.service_stopped': 'Service stopped',
     'status.service_stop_timeout': 'Stop timeout, please check service status',
     'status.service_starting': 'Starting service...',
     'status.service_started': 'Service started',

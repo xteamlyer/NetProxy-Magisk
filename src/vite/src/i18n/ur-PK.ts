@@ -171,8 +171,6 @@ const urPK: Record<string, string> = {
 
     'common.enabled': 'فعال',
     'common.disabled': 'غیر فعال',
-    'common.edit': 'ترمیم',
-    'common.delete': 'حذف',
     'common.save_failed': 'محفوظ کرنے میں ناکام: ',
     'common.set_failed': 'سیٹ کرنے میں ناکام: ',
     'settings.language.auto': 'خودکار',
@@ -290,9 +288,6 @@ const urPK: Record<string, string> = {
     'settings.theme.color_desc': 'ایک رنگ منتخب کریں',
     'settings.monet.title': 'Monet رنگ',
     'settings.monet.desc': 'وال پیپر سے نکالیں (صرف خودکار موڈ)',
-    'settings.theme.auto': 'خودکار',
-    'settings.theme.light': 'لائٹ',
-    'settings.theme.dark': 'ڈارک',
 
     // Status Page Labels
     'status.latency_baidu': 'Baidu',
@@ -367,8 +362,6 @@ const urPK: Record<string, string> = {
     'uid.user_label': 'صارف',
     'uid.toast_proxy_disabled': 'فی ایپ پراکسی غیر فعال ہے',
     'uid.toast_mode_switched': 'تبدیل کر دیا گیا: ',
-    'uid.mode_blacklist': 'بلیک لسٹ',
-    'uid.mode_whitelist': 'وائٹ لسٹ',
     'uid.confirm_remove': 'کیا آپ "{name}" کو ہٹانا چاہتے ہیں؟',
     'uid.toast_removed': 'ہٹا دیا گیا',
     'uid.toast_remove_failed': 'ہٹانے میں ناکام: ',
@@ -378,7 +371,6 @@ const urPK: Record<string, string> = {
     'uid.no_apps_found': 'کوئی ایپس نہیں ملیں',
 
     'status.service_stopping': 'سروس رک رہی ہے...',
-    'status.service_stopped': 'سروس بند ہے',
     'status.service_stop_timeout': 'رکنے کا ٹائم آؤٹ، براہ کرم اسٹیٹس چیک کریں',
     'status.service_starting': 'سروس شروع ہو رہی ہے...',
     'status.service_started': 'سروس شروع ہو گئی',

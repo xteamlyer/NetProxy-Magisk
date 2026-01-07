@@ -178,8 +178,6 @@ const zhCN: Record<string, string> = {
 
     'common.enabled': '启用',
     'common.disabled': '禁用',
-    'common.edit': '编辑',
-    'common.delete': '删除',
     'common.save_failed': '保存失败: ',
     'common.set_failed': '设置失败: ',
     'settings.language.auto': '跟随系统 (Auto)',
@@ -310,9 +308,6 @@ const zhCN: Record<string, string> = {
     'settings.theme.color_desc': '选择一个主题色',
     'settings.monet.title': '莫奈取色',
     'settings.monet.desc': '从系统壁纸提取主题色（仅自动模式可用）',
-    'settings.theme.auto': '自动',
-    'settings.theme.light': '浅色',
-    'settings.theme.dark': '深色',
 
     // Status Page Labels
     'status.latency_baidu': '百度',
@@ -387,8 +382,6 @@ const zhCN: Record<string, string> = {
     'uid.user_label': '用户',
     'uid.toast_proxy_disabled': '分应用代理已关闭',
     'uid.toast_mode_switched': '已切换为',
-    'uid.mode_blacklist': '黑名单',
-    'uid.mode_whitelist': '白名单',
     'uid.confirm_remove': '确定要移除 {name} 吗？',
     'uid.toast_removed': '已移除',
     'uid.toast_remove_failed': '移除失败: ',
@@ -398,7 +391,6 @@ const zhCN: Record<string, string> = {
     'uid.no_apps_found': '没有找到应用',
 
     'status.service_stopping': '正在停止服务...',
-    'status.service_stopped': '服务已停止',
     'status.service_stop_timeout': '停止超时，请检查服务状态',
     'status.service_starting': '正在启动服务...',
     'status.service_started': '服务已启动',
