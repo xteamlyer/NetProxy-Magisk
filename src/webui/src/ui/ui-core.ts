@@ -56,10 +56,9 @@ export class UI {
         this.setupFAB();
         this.setupThemeToggle();
         this.setupDialogs();
-        this.configPage.init();
         this.appPage.init();
+        this.setupAppSelector();
         this.settingsPage.init();
-        // Logs logic is now part of settingsPage, initialized there
         this.statusPage.setupModeButtons();
 
         // 初始化页面状态 (包括按钮可见性)
