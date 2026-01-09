@@ -1,6 +1,6 @@
 import { ConfigService } from '../services/config-service.js';
 import { StatusService } from '../services/status-service.js';
-import { ShellService } from '../services/shell-service.js';
+import { ShellService } from '../services/ksu.js';
 import { toast } from '../utils/toast.js';
 import { I18nService } from '../i18n/i18n-service.js';
 import { UI } from './ui-core.js';
@@ -647,7 +647,7 @@ export class ConfigPageManager {
                 latencyLabel.textContent = I18nService.t('config.status.testing');
                 latencyLabel.style.color = 'var(--mdui-color-on-surface-variant)';
             }
-            const latencyStr = await ShellService.getPingLatency(address);
+            const latencyStr = await StatusService.getPingLatency(address);
             let latencyVal = 9999;
 
             const displayStr = latencyStr === 'timeout' ? I18nService.t('config.status.timeout') :

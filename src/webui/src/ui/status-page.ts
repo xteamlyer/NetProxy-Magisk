@@ -680,7 +680,7 @@ export class StatusPageManager {
 
             // 这里应该调用 StatusService 获取真实延迟 (Google CP)
             // 暂时用 Google
-            const latency = await import('../services/shell-service.js').then(m => m.ShellService.getPingLatency('google.com'));
+            const latency = await StatusService.getPingLatency('google.com');
 
             if (latencyEl) {
                 if (latency === 'timeout' || latency === 'failed') {

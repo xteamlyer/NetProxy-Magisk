@@ -1,5 +1,4 @@
-import { ShellService } from './shell-service.js';
-import { exec } from 'kernelsu';
+import { KSU, ShellService, ChildProcess } from './ksu.js';
 
 interface ServiceStatus {
     status: 'running' | 'stopped' | 'unknown';
@@ -55,16 +54,16 @@ export class StatusService {
 
     // 启动服务（非阻塞）
     static async startService(): Promise<boolean> {
-        // 后台执行服务脚本，不等待完成
-        exec(`su -c "nohup sh ${ShellService.MODULE_PATH}/scripts/core/service.sh start > /dev/null 2>&1 &"`);
+        // 后台执行服务脚本，不等待完成 (fire-and-forget)
+        KSU.spawn('sh', [`${KSU.MODULE_PATH}/scripts/core/service.sh`, 'start']);
         // 轮询等待服务启动
         return await this.pollServiceStatus('running', 15000);
     }
 
     // 停止服务（非阻塞）
     static async stopService(): Promise<boolean> {
-        // 后台执行服务脚本，不等待完成
-        exec(`su -c "nohup sh ${ShellService.MODULE_PATH}/scripts/core/service.sh stop > /dev/null 2>&1 &"`);
+        // 后台执行服务脚本，不等待完成 (fire-and-forget)
+        KSU.spawn('sh', [`${KSU.MODULE_PATH}/scripts/core/service.sh`, 'stop']);
         // 轮询等待服务停止
         return await this.pollServiceStatus('stopped', 10000);
     }
@@ -93,7 +92,7 @@ export class StatusService {
     // 获取服务运行时间
     static async getUptime(): Promise<string> {
         try {
-            const result: any = await exec(`
+            const result = await KSU.exec(`
                  pid=$(pidof xray) || exit 1
                  awk 'BEGIN {
                      getline u < "/proc/uptime"; split(u, a, " ")
@@ -105,7 +104,7 @@ export class StatusService {
                      else printf "%02d:%02d:%02d", h, m, s
                  }'
              `);
-            return (result.errno === 0 && result.stdout.trim()) ? result.stdout.trim() : '--';
+            return result || '--';
         } catch (error) {
             return '--';
         }
@@ -118,11 +117,8 @@ export class StatusService {
     // 获取实时网速（无阻塞）
     static async getNetworkSpeed(): Promise<NetworkSpeed> {
         try {
-            const result: any = await exec(`awk '/:/ {rx+=$2; tx+=$10} END {print rx, tx}' /proc/net/dev`);
-            if (result.errno !== 0) {
-                return { download: '0 KB/s', upload: '0 KB/s' };
-            }
-            const [rx, tx] = result.stdout.trim().split(/\s+/).map(Number);
+            const result = await KSU.exec(`awk '/:/ {rx+=$2; tx+=$10} END {print rx, tx}' /proc/net/dev`);
+            const [rx, tx] = result.split(/\s+/).map(Number);
             const now = Date.now();
 
             if (this._lastNetBytes === null) {
@@ -154,11 +150,8 @@ export class StatusService {
     static async getTrafficStats(): Promise<TrafficStats> {
         try {
             // 获取所有接口的总流量
-            const result: any = await exec(`awk '/:/ {rx+=$2; tx+=$10} END {print rx, tx}' /proc/net/dev`);
-            if (result.errno !== 0) {
-                return { rx: 0, tx: 0 };
-            }
-            const parts = result.stdout.trim().split(/\s+/);
+            const result = await KSU.exec(`awk '/:/ {rx+=$2; tx+=$10} END {print rx, tx}' /proc/net/dev`);
+            const parts = result.split(/\s+/);
             return {
                 rx: parseInt(parts[0]) || 0,
                 tx: parseInt(parts[1]) || 0
@@ -278,9 +271,123 @@ export class StatusService {
         }
     }
 
-    // 获取外网IP
+    // 获取外网IP (多 API Race 模式，使用 spawn 非阻塞)
     static async getExternalIP(): Promise<string | null> {
-        return ShellService.fetchExternalIP();
+        const ipApis = [
+            { url: 'https://ipwho.is', field: 'ip' },
+            { url: 'https://api.myip.com', field: 'ip' },
+            { url: 'https://ipapi.co/json', field: 'ip' },
+            { url: 'http://ip-api.com/json', field: 'query' },
+            { url: 'https://api.ip.sb/geoip', field: 'ip' },
+        ];
+
+        const fetchPromises = ipApis.map((api) => {
+            return new Promise<string>((resolve, reject) => {
+                let output = '';
+                let resolved = false;
+
+                const timeout = setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        reject(new Error('timeout'));
+                    }
+                }, 5000);
+
+                try {
+                    const curl = KSU.spawn('curl', ['-s', '--connect-timeout', '3', '--max-time', '5', api.url]);
+
+                    curl.stdout.on('data', (data: string) => {
+                        output += data;
+                    });
+
+                    curl.on('exit', (code: number) => {
+                        if (resolved) return;
+                        resolved = true;
+                        clearTimeout(timeout);
+
+                        if (code === 0 && output.trim()) {
+                            try {
+                                const json = JSON.parse(output.trim());
+                                const ip = json[api.field];
+                                if (ip && typeof ip === 'string' && /^[\d.:a-fA-F]+$/.test(ip)) {
+                                    resolve(ip);
+                                    return;
+                                }
+                            } catch {
+                                // JSON parse failed
+                            }
+                        }
+                        reject(new Error('failed'));
+                    });
+
+                    curl.on('error', () => {
+                        if (resolved) return;
+                        resolved = true;
+                        clearTimeout(timeout);
+                        reject(new Error('error'));
+                    });
+                } catch {
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        reject(new Error('spawn failed'));
+                    }
+                }
+            });
+        });
+
+        return Promise.any(fetchPromises).catch(() => null);
+    }
+
+    // Ping 延迟测试 (使用 spawn 非阻塞)
+    static getPingLatency(host: string): Promise<string> {
+        return new Promise((resolve) => {
+            let output = '';
+            let resolved = false;
+
+            const timeout = setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    resolve('timeout');
+                }
+            }, 3000);
+
+            try {
+                const ping = KSU.spawn('ping', ['-c', '1', '-W', '2', host]);
+
+                ping.stdout.on('data', (data: string) => {
+                    output += data;
+                });
+
+                ping.on('exit', (code: number) => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeout);
+
+                    if (code === 0 && output) {
+                        const match = output.match(/time=([\d.]+)\s*ms/);
+                        if (match) {
+                            resolve(`${Math.round(parseFloat(match[1]))} ms`);
+                            return;
+                        }
+                    }
+                    resolve('timeout');
+                });
+
+                ping.on('error', () => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeout);
+                    resolve('failed');
+                });
+            } catch {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timeout);
+                    resolve('failed');
+                }
+            }
+        });
     }
 
     // ==================== 出站模式 ====================

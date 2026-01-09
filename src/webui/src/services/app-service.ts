@@ -1,4 +1,4 @@
-import { ShellService } from './shell-service.js';
+import { ShellService } from './ksu.js';
 import { getPackagesInfo } from 'kernelsu';
 
 interface UserInfo {

@@ -1,6 +1,6 @@
 import { toast } from '../utils/toast.js';
 import { SettingsService } from '../services/settings-service.js';
-import { ShellService } from '../services/shell-service.js';
+import { ShellService } from '../services/ksu.js';
 import { I18nService } from '../i18n/i18n-service.js';
 import { setColorScheme } from 'mdui/functions/setColorScheme.js';
 import { setTheme } from 'mdui/functions/setTheme.js';
