@@ -971,7 +971,7 @@ export class ConfigPageManager {
             return;
         }
 
-        const supportedProtocols = ['vless://', 'vmess://', 'trojan://', 'ss://', 'socks://', 'http://', 'https://'];
+        const supportedProtocols = ['vless://', 'vmess://', 'trojan://', 'ss://', 'socks://', 'http://', 'https://', 'hysteria2://', 'hy2://'];
         const isValid = supportedProtocols.some(protocol => nodeLink.startsWith(protocol));
 
         if (!isValid) {
