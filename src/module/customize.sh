@@ -243,25 +243,43 @@ set_permissions() {
     return 0
 }
 
-# 安装配套应用
-install_app() {
-    local apk="$MODPATH/NetProxy.apk"
+# 询问用户是否安装配套应用
+ask_install_app() {
+    ui_print ""
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print "  是否安装 NetProxy 配套应用？"
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print ""
+    ui_print "  [音量+] 安装 (打开 Google Play)"
+    ui_print "  [音量-] 跳过"
+    ui_print ""
     
-    if [ ! -f "$apk" ]; then
-        return 0
-    fi
+    local timeout=10
+    local choice=""
     
-    print_step "安装 NetProxy 应用..."
+    while [ $timeout -gt 0 ]; do
+        # 读取音量键
+        local key=$(getevent -lqc 1 2>/dev/null | grep -E "KEY_VOLUME(UP|DOWN)" | head -1)
+        
+        if echo "$key" | grep -q "VOLUMEUP"; then
+            choice="install"
+            break
+        elif echo "$key" | grep -q "VOLUMEDOWN"; then
+            choice="skip"
+            break
+        fi
+        
+        sleep 1
+        timeout=$((timeout - 1))
+    done
     
-    if pm install -r "$apk" >/dev/null 2>&1; then
-        print_ok "应用安装成功"
+    if [ "$choice" = "install" ]; then
+        print_step "正在打开 Google Play..."
+        am start -a android.intent.action.VIEW -d "https://play.google.com/store/apps/details?id=www.netproxy.web.ui" >/dev/null 2>&1
+        print_ok "已打开 Google Play"
     else
-        print_warn "应用安装失败 (可手动安装)"
+        print_step "已跳过安装"
     fi
-    
-    # 删除 APK
-    rm -f "$apk"
-    rm -f "$LIVE_DIR/NetProxy.apk" 2>/dev/null
     
     return 0
 }
@@ -288,12 +306,14 @@ if backup_config && \
    stop_xray_if_running && \
    sync_to_live && \
    set_permissions && \
-   restart_xray_if_needed && \
-   install_app; then
+   restart_xray_if_needed; then
     
     cleanup
     
     print_title "安装完成，无需重启设备"
+    
+    # 询问是否安装配套应用
+    ask_install_app
 else
     cleanup
     print_title "安装失败"
