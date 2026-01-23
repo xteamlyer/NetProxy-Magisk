@@ -1264,7 +1264,7 @@ export class SettingsPageManager {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const html = document.documentElement;
 
-        if (savedMonet === 'true' && savedTheme === 'auto') {
+        if (savedMonet !== 'false' && savedTheme === 'auto') {
             // 自动模式 + 莫奈取色开启：使用 KernelSU 注入的变量
             html.classList.add('mdui-theme-auto');
             html.classList.remove('mdui-theme-light', 'mdui-theme-dark');
