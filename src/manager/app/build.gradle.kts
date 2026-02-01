@@ -1,13 +1,11 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.android.build.gradle.tasks.PackageAndroidArtifact
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
 }
 
 val keystorePropertiesFile: File = rootProject.file("keystore.properties")
@@ -36,8 +34,9 @@ android {
         applicationId = "www.netproxy.web.ui"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = "1.0"
+        base.archivesName = "NetProxy-${versionName}-${versionCode}"
     }
 
     buildTypes {
@@ -56,17 +55,6 @@ android {
         }
     }
 
-    applicationVariants.all {
-        outputs.forEach {
-            val output = it as BaseVariantOutputImpl
-            output.outputFileName = "NetProxy-${versionName}-${versionCode}-$name.apk"
-        }
-        kotlin.sourceSets {
-            getByName(name) {
-                kotlin.srcDir("build/generated/ksp/$name/kotlin")
-            }
-        }
-    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
