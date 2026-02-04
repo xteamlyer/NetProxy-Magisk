@@ -42,7 +42,6 @@ export class SettingsPageManager {
     dnsConfig: DnsConfig;
     editingServerIndex: number;
     editingHostKey: string | null;
-    proxyKeys: string[];
     draggedIndex: number | null;
     sortable: Sortable | null;
     // Logs related
@@ -67,15 +66,6 @@ export class SettingsPageManager {
         this._logsAutoRefreshInterval = null;
         this._logsAutoRefreshMs = 3000;
 
-        this.proxyKeys = [
-            'proxy_mobile',
-            'proxy_wifi',
-            'proxy_hotspot',
-            'proxy_usb',
-            'proxy_tcp',
-            'proxy_udp',
-            'proxy_ipv6',
-        ];
         this.setupEventListeners();
         this.setupRoutingRulesPage();
         this.setupProxySettingsPage();
@@ -1006,25 +996,11 @@ export class SettingsPageManager {
             });
         }
 
-        // 为每个开关绑定事件
-        for (const key of this.proxyKeys) {
-            // key 格式: proxy_mobile -> HTML id: proxy-mobile
-            const htmlId = key.replace('_', '-');
-            const switchEl = document.getElementById(htmlId) as HTMLInputElement | null;
-            if (switchEl) {
-                switchEl.addEventListener('change', async e => {
-                    const value = (e.target as HTMLInputElement).checked;
-                    await this.setProxySetting(key, value);
-                });
-            }
-        }
-
-        // 代理模式选择器
-        const proxyModeGroup = document.getElementById('proxy-mode-settings') as any;
-        if (proxyModeGroup) {
-            proxyModeGroup.addEventListener('change', async (e: Event) => {
-                const value = (e.target as HTMLInputElement).value;
-                await this.setProxyMode(value);
+        // 保存按钮
+        const saveBtn = document.getElementById('proxy-save-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                this.saveProxySettings();
             });
         }
     }
@@ -1032,68 +1008,146 @@ export class SettingsPageManager {
     async loadProxySettings(): Promise<void> {
         try {
             const settings = await SettingsService.getProxySettings();
-            for (const key of this.proxyKeys) {
-                const htmlId = key.replace('_', '-');
-                const switchEl = document.getElementById(htmlId) as HTMLInputElement | null;
-                if (switchEl) {
-                    switchEl.checked = settings[key] === true;
-                }
-            }
 
-            // 加载代理模式
-            const proxyMode = await SettingsService.getProxyMode();
-            const proxyModeGroup = document.getElementById('proxy-mode-settings') as any;
-            const proxyModeDesc = document.getElementById('proxy-mode-desc-settings');
-            if (proxyModeGroup) {
-                proxyModeGroup.value = String(proxyMode);
-            }
-            if (proxyModeDesc) {
-                this.updateProxyModeDesc(proxyMode);
-            }
+            // 设置值的辅助函数
+            const setVal = (id: string, value: any) => {
+                const el = document.getElementById(id) as HTMLInputElement | null;
+                if (!el) return;
+                if (el.tagName === 'MDUI-SWITCH' || (el.tagName === 'INPUT' && el.type === 'checkbox')) {
+                    el.checked = !!value;
+                } else {
+                    el.value = String(value === undefined ? '' : value);
+                }
+            };
+
+            // 核心配置
+            setVal('proxy-mode-settings', settings.proxy_mode);
+            setVal('proxy-tcp-port', settings.proxy_tcp_port);
+            setVal('proxy-udp-port', settings.proxy_udp_port);
+            setVal('proxy-table-id', settings.table_id);
+            setVal('proxy-routing-mark', settings.routing_mark);
+            setVal('proxy-mark-value', settings.mark_value);
+            setVal('proxy-mark-value6', settings.mark_value6);
+
+            // 开关设置
+            setVal('proxy-mobile', settings.proxy_mobile);
+            setVal('proxy-wifi', settings.proxy_wifi);
+            setVal('proxy-hotspot', settings.proxy_hotspot);
+            setVal('proxy-usb', settings.proxy_usb);
+            setVal('proxy-tcp', settings.proxy_tcp);
+            setVal('proxy-udp', settings.proxy_udp);
+            setVal('proxy-ipv6', settings.proxy_ipv6);
+            setVal('proxy-force-mark-bypass', settings.force_mark_bypass);
+            setVal('proxy-block-quic', settings.block_quic);
+
+            // 接口设置
+            setVal('proxy-mobile-int', settings.mobile_interface);
+            setVal('proxy-wifi-int', settings.wifi_interface);
+            setVal('proxy-hotspot-int', settings.hotspot_interface);
+            setVal('proxy-usb-int', settings.usb_interface);
+            setVal('proxy-other-proxy-int', settings.other_proxy_interfaces);
+            setVal('proxy-other-bypass-int', settings.other_bypass_interfaces);
+
+            // DNS 设置
+            setVal('proxy-dns-hijack', settings.dns_hijack_enable);
+            setVal('proxy-dns-port', settings.dns_port);
+
+            // IP 列表
+            setVal('proxy-bypass-cn', settings.bypass_cn_ip);
+            setVal('proxy-cn-ip-file', settings.cn_ip_file);
+            setVal('proxy-cn-ipv6-file', settings.cn_ipv6_file);
+            setVal('proxy-cn-ip-url', settings.cn_ip_url);
+            setVal('proxy-cn-ipv6-url', settings.cn_ipv6_url);
+            setVal('proxy-bypass-v4', settings.bypass_ipv4_list);
+            setVal('proxy-bypass-v6', settings.bypass_ipv6_list);
+            setVal('proxy-proxy-v4', settings.proxy_ipv4_list);
+            setVal('proxy-proxy-v6', settings.proxy_ipv6_list);
+
+            // MAC 过滤
+            setVal('proxy-mac-enable', settings.mac_filter_enable);
+            setVal('proxy-mac-mode', settings.mac_proxy_mode);
+            setVal('proxy-proxy-macs', settings.proxy_macs_list);
+            setVal('proxy-bypass-macs', settings.bypass_macs_list);
+
         } catch (error) {
             console.error('加载代理设置失败:', error);
-        }
-    }
-
-    async setProxySetting(key: string, value: boolean): Promise<void> {
-        try {
-            await SettingsService.setProxySetting(key, value);
-            toast(value ? I18nService.t('common.enabled') : I18nService.t('common.disabled'));
-        } catch (error: any) {
-            toast(I18nService.t('common.set_failed') + error.message);
-            // 恢复开关状态
-            const htmlId = key.replace('_', '-');
-            const switchEl = document.getElementById(htmlId) as HTMLInputElement | null;
-            if (switchEl) {
-                switchEl.checked = !value;
+            const container = document.getElementById('proxy-settings-page');
+            if (container) {
+                // simple error display, better toast
+                toast(I18nService.t('common.load_failed'));
             }
         }
     }
 
-    async setProxyMode(value: string): Promise<void> {
+    async saveProxySettings(): Promise<void> {
         try {
-            await SettingsService.setProxyMode(value);
-            this.updateProxyModeDesc(value);
-            const modeNames: Record<string, string> = {
-                '0': I18nService.t('settings.proxy.mode_auto'),
-                '1': I18nService.t('settings.proxy.mode_tproxy'),
-                '2': I18nService.t('settings.proxy.mode_redirect'),
+            const getVal = (id: string, type: 'string' | 'number' | 'bool' = 'string') => {
+                const el = document.getElementById(id) as HTMLInputElement | null;
+                if (!el) return undefined;
+                if (type === 'bool') return el.checked;
+                const val = el.value;
+                if (type === 'number') return Number(val);
+                return val;
             };
-            toast(I18nService.t('settings.proxy.toast_mode_set') + (modeNames[value] || value));
-        } catch (error: any) {
-            toast(I18nService.t('common.set_failed') + error.message);
-        }
-    }
 
-    updateProxyModeDesc(mode) {
-        const desc = document.getElementById('proxy-mode-desc-settings');
-        if (!desc) return;
-        const descs = {
-            '0': I18nService.t('settings.proxy.desc_auto'),
-            '1': I18nService.t('settings.proxy.desc_tproxy'),
-            '2': I18nService.t('settings.proxy.desc_redirect'),
-        };
-        desc.textContent = descs[String(mode)] || descs['0'];
+            const settings: any = {
+                // 核心配置
+                proxy_mode: getVal('proxy-mode-settings', 'number'),
+                proxy_tcp_port: getVal('proxy-tcp-port'),
+                proxy_udp_port: getVal('proxy-udp-port'),
+                table_id: getVal('proxy-table-id', 'number'),
+                routing_mark: getVal('proxy-routing-mark'),
+                mark_value: getVal('proxy-mark-value', 'number'),
+                mark_value6: getVal('proxy-mark-value6', 'number'),
+
+                // 开关设置
+                proxy_mobile: getVal('proxy-mobile', 'bool'),
+                proxy_wifi: getVal('proxy-wifi', 'bool'),
+                proxy_hotspot: getVal('proxy-hotspot', 'bool'),
+                proxy_usb: getVal('proxy-usb', 'bool'),
+                proxy_tcp: getVal('proxy-tcp', 'bool'),
+                proxy_udp: getVal('proxy-udp', 'bool'),
+                proxy_ipv6: getVal('proxy-ipv6', 'bool'),
+                force_mark_bypass: getVal('proxy-force-mark-bypass', 'bool'),
+                block_quic: getVal('proxy-block-quic', 'bool'),
+
+                // 接口设置
+                mobile_interface: getVal('proxy-mobile-int'),
+                wifi_interface: getVal('proxy-wifi-int'),
+                hotspot_interface: getVal('proxy-hotspot-int'),
+                usb_interface: getVal('proxy-usb-int'),
+                other_proxy_interfaces: getVal('proxy-other-proxy-int'),
+                other_bypass_interfaces: getVal('proxy-other-bypass-int'),
+
+                // DNS 设置
+                dns_hijack_enable: getVal('proxy-dns-hijack', 'bool'),
+                dns_port: getVal('proxy-dns-port'),
+
+                // IP 列表
+                bypass_cn_ip: getVal('proxy-bypass-cn', 'bool'),
+                cn_ip_file: getVal('proxy-cn-ip-file'),
+                cn_ipv6_file: getVal('proxy-cn-ipv6-file'),
+                cn_ip_url: getVal('proxy-cn-ip-url'),
+                cn_ipv6_url: getVal('proxy-cn-ipv6-url'),
+                bypass_ipv4_list: getVal('proxy-bypass-v4'),
+                bypass_ipv6_list: getVal('proxy-bypass-v6'),
+                proxy_ipv4_list: getVal('proxy-proxy-v4'),
+                proxy_ipv6_list: getVal('proxy-proxy-v6'),
+
+                // MAC 过滤
+                mac_filter_enable: getVal('proxy-mac-enable', 'bool'),
+                mac_proxy_mode: getVal('proxy-mac-mode'),
+                proxy_macs_list: getVal('proxy-proxy-macs'),
+                bypass_macs_list: getVal('proxy-bypass-macs'),
+            };
+
+            await SettingsService.saveProxySettings(settings);
+            toast(I18nService.t('settings.proxy.save_success'));
+            toast(I18nService.t('settings.proxy.save_warning'));
+
+        } catch (error: any) {
+            toast(I18nService.t('common.save_failed') + error.message, true);
+        }
     }
 
     // ===================== 主题页面 =====================

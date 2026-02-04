@@ -652,70 +652,204 @@
             </div>
           </mdui-card>
 
-          <!-- 代理模式选择 -->
-          <mdui-list style="margin-top: 16px;">
-            <mdui-list-item>
-              <span data-i18n="proxy.mode">代理模式</span>
-              <span slot="description" id="proxy-mode-desc-settings" data-i18n="proxy.mode_desc">设置代理模式</span>
-              <mdui-select slot="end-icon" id="proxy-mode-settings" value="0" style="width: 120px;">
-                <mdui-menu-item value="0" data-i18n="proxy.mode.auto">自动</mdui-menu-item>
-                <mdui-menu-item value="1">TPROXY</mdui-menu-item>
-                <mdui-menu-item value="2">REDIRECT</mdui-menu-item>
-              </mdui-select>
-            </mdui-list-item>
-          </mdui-list>
+          <!-- 操作按钮 -->
+          <div style="padding: 16px 0; text-align: right;">
+            <mdui-button id="proxy-save-btn" icon="save" data-i18n="common.save">保存设置 (Save)</mdui-button>
+          </div>
 
-          <mdui-list id="proxy-settings-list" style="margin-top: 16px;">
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.mobile">移动数据</span>
-              <span slot="description" data-i18n="settings.proxy.mobile_desc">代理移动数据流量</span>
-              <mdui-switch slot="end-icon" id="proxy-mobile"></mdui-switch>
-            </mdui-list-item>
+          <!-- 分组：核心配置 -->
+          <mdui-card variant="outlined" style="margin-top: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_core">核心配置</h4>
 
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.wifi">WiFi</span>
-              <span slot="description" data-i18n="settings.proxy.wifi_desc">代理 WiFi 流量</span>
-              <mdui-switch slot="end-icon" id="proxy-wifi"></mdui-switch>
-            </mdui-list-item>
+              <mdui-list>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.proxy_mode">代理模式</span>
+                  <mdui-select slot="end-icon" id="proxy-mode-settings" value="0" style="width: 140px;">
+                    <mdui-menu-item value="0" data-i18n="proxy.mode.auto">自动</mdui-menu-item>
+                    <mdui-menu-item value="1" data-i18n="settings.proxy.mode_tproxy">TPROXY</mdui-menu-item>
+                    <mdui-menu-item value="2" data-i18n="settings.proxy.mode_redirect">REDIRECT</mdui-menu-item>
+                  </mdui-select>
+                </mdui-list-item>
 
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.hotspot">热点</span>
-              <span slot="description" data-i18n="settings.proxy.hotspot_desc">代理热点连接设备的流量</span>
-              <mdui-switch slot="end-icon" id="proxy-hotspot"></mdui-switch>
-            </mdui-list-item>
+                <div style="display: flex; gap: 16px; margin-top: 8px;">
+                  <mdui-text-field label="TCP Port" id="proxy-tcp-port" type="number" style="flex: 1;"
+                    data-i18n-label="settings.proxy.proxy_tcp_port"></mdui-text-field>
+                  <mdui-text-field label="UDP Port" id="proxy-udp-port" type="number" style="flex: 1;"
+                    data-i18n-label="settings.proxy.proxy_udp_port"></mdui-text-field>
+                </div>
 
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.usb">USB 共享</span>
-              <span slot="description" data-i18n="settings.proxy.usb_desc">代理 USB 共享设备的流量</span>
-              <mdui-switch slot="end-icon" id="proxy-usb"></mdui-switch>
-            </mdui-list-item>
+                <div style="display: flex; gap: 16px; margin-top: 8px;">
+                  <mdui-text-field label="Table ID" id="proxy-table-id" type="number" style="flex: 1;"
+                    data-i18n-label="settings.proxy.table_id"></mdui-text-field>
+                  <mdui-text-field label="Routing Mark" id="proxy-routing-mark" style="flex: 1;"
+                    data-i18n-label="settings.proxy.routing_mark"></mdui-text-field>
+                </div>
 
-            <mdui-divider></mdui-divider>
+                <div style="display: flex; gap: 16px; margin-top: 8px;">
+                  <mdui-text-field label="Mark Value" id="proxy-mark-value" type="number" style="flex: 1;"
+                    data-i18n-label="settings.proxy.mark_value"></mdui-text-field>
+                  <mdui-text-field label="Mark6 Value" id="proxy-mark-value6" type="number" style="flex: 1;"
+                    data-i18n-label="settings.proxy.mark_value6"></mdui-text-field>
+                </div>
+              </mdui-list>
+            </div>
+          </mdui-card>
 
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.tcp">TCP</span>
-              <span slot="description" data-i18n="settings.proxy.tcp_desc">代理 TCP 流量</span>
-              <mdui-switch slot="end-icon" id="proxy-tcp"></mdui-switch>
-            </mdui-list-item>
+          <!-- 分组：代理开关 -->
+          <mdui-card variant="outlined" style="margin-top: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_switches">代理开关</h4>
+              <mdui-list>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.mobile">移动数据</span>
+                  <mdui-switch slot="end-icon" id="proxy-mobile"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.wifi">WiFi</span>
+                  <mdui-switch slot="end-icon" id="proxy-wifi"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.hotspot">热点</span>
+                  <mdui-switch slot="end-icon" id="proxy-hotspot"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.usb">USB 共享</span>
+                  <mdui-switch slot="end-icon" id="proxy-usb"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.tcp">TCP</span>
+                  <mdui-switch slot="end-icon" id="proxy-tcp"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.udp">UDP</span>
+                  <mdui-switch slot="end-icon" id="proxy-udp"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.ipv6">IPv6</span>
+                  <mdui-switch slot="end-icon" id="proxy-ipv6"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.force_mark_bypass">强制 Mark 绕过</span>
+                  <mdui-switch slot="end-icon" id="proxy-force-mark-bypass"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.block_quic">阻断 QUIC (UDP 443)</span>
+                  <mdui-switch slot="end-icon" id="proxy-block-quic"></mdui-switch>
+                </mdui-list-item>
+              </mdui-list>
+            </div>
+          </mdui-card>
 
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.udp">UDP</span>
-              <span slot="description" data-i18n="settings.proxy.udp_desc">代理 UDP 流量</span>
-              <mdui-switch slot="end-icon" id="proxy-udp"></mdui-switch>
-            </mdui-list-item>
+          <!-- 分组：接口设置 -->
+          <mdui-card variant="outlined" style="margin-top: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_interfaces">网卡接口</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <mdui-text-field label="Mobile Int" id="proxy-mobile-int"
+                  data-i18n-label="settings.proxy.mobile_int"></mdui-text-field>
+                <mdui-text-field label="WiFi Int" id="proxy-wifi-int"
+                  data-i18n-label="settings.proxy.wifi_int"></mdui-text-field>
+                <mdui-text-field label="Hotspot Int" id="proxy-hotspot-int"
+                  data-i18n-label="settings.proxy.hotspot_int"></mdui-text-field>
+                <mdui-text-field label="USB Int" id="proxy-usb-int"
+                  data-i18n-label="settings.proxy.usb_int"></mdui-text-field>
+              </div>
+              <div style="margin-top: 16px;">
+                <mdui-text-field label="Other Proxy Int" id="proxy-other-proxy-int"
+                  style="width: 100%; margin-bottom: 12px;"
+                  data-i18n-label="settings.proxy.other_proxy_int"></mdui-text-field>
+                <mdui-text-field label="Other Bypass Int" id="proxy-other-bypass-int" style="width: 100%;"
+                  data-i18n-label="settings.proxy.other_bypass_int"></mdui-text-field>
+              </div>
+            </div>
+          </mdui-card>
 
-            <mdui-divider></mdui-divider>
+          <!-- 分组：DNS 设置 -->
+          <mdui-card variant="outlined" style="margin-top: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_dns">DNS 设置</h4>
+              <mdui-list>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.dns_hijack">DNS 劫持</span>
+                  <mdui-switch slot="end-icon" id="proxy-dns-hijack"></mdui-switch>
+                </mdui-list-item>
+              </mdui-list>
+              <mdui-text-field label="DNS Port" id="proxy-dns-port" type="number" style="width: 100%; margin-top: 8px;"
+                data-i18n-label="settings.proxy.dns_port"></mdui-text-field>
+            </div>
+          </mdui-card>
 
-            <mdui-list-item>
-              <span data-i18n="settings.proxy.ipv6">IPv6</span>
-              <span slot="description" data-i18n="settings.proxy.ipv6_desc">启用 IPv6 代理</span>
-              <mdui-switch slot="end-icon" id="proxy-ipv6"></mdui-switch>
-            </mdui-list-item>
-          </mdui-list>
+          <!-- 分组：中国 IP 绕过 -->
+          <mdui-card variant="outlined" style="margin-top: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_cn">中国 IP 绕过</h4>
+              <mdui-list>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.bypass_cn">中国大陆 IP 绕过</span>
+                  <mdui-switch slot="end-icon" id="proxy-bypass-cn"></mdui-switch>
+                </mdui-list-item>
+              </mdui-list>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px;">
+                <mdui-text-field label="CN IPv4 File" id="proxy-cn-ip-file"
+                  data-i18n-label="settings.proxy.cn_ip_file"></mdui-text-field>
+                <mdui-text-field label="CN IPv6 File" id="proxy-cn-ipv6-file"
+                  data-i18n-label="settings.proxy.cn_ipv6_file"></mdui-text-field>
+              </div>
+              <div style="margin-top: 12px;">
+                <mdui-text-field label="CN IPv4 URL" id="proxy-cn-ip-url" style="width: 100%; margin-bottom: 12px;"
+                  data-i18n-label="settings.proxy.cn_ip_url"></mdui-text-field>
+                <mdui-text-field label="CN IPv6 URL" id="proxy-cn-ipv6-url" style="width: 100%;"
+                  data-i18n-label="settings.proxy.cn_ipv6_url"></mdui-text-field>
+              </div>
+            </div>
+          </mdui-card>
+
+          <!-- 分组：IP 列表配置 -->
+          <mdui-card variant="outlined" style="margin-top: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_lists">IP 列表配置</h4>
+              <mdui-text-field label="IPv4 Bypass List" id="proxy-bypass-v4" rows="3" style="width: 100%;"
+                data-i18n-label="settings.proxy.bypass_v4"></mdui-text-field>
+              <mdui-text-field label="IPv6 Bypass List" id="proxy-bypass-v6" rows="3"
+                style="width: 100%; margin-top: 12px;" data-i18n-label="settings.proxy.bypass_v6"></mdui-text-field>
+              <mdui-text-field label="IPv4 Proxy List" id="proxy-proxy-v4" rows="3"
+                style="width: 100%; margin-top: 12px;" data-i18n-label="settings.proxy.proxy_v4"></mdui-text-field>
+              <mdui-text-field label="IPv6 Proxy List" id="proxy-proxy-v6" rows="3"
+                style="width: 100%; margin-top: 12px;" data-i18n-label="settings.proxy.proxy_v6"></mdui-text-field>
+            </div>
+          </mdui-card>
+
+          <!-- 分组：MAC 过滤 (热点) -->
+          <mdui-card variant="outlined" style="margin-top: 16px; margin-bottom: 16px;">
+            <div style="padding: 16px;">
+              <h4 style="margin: 0 0 16px;" data-i18n="settings.proxy.group_mac">MAC 地址过滤 (热点)</h4>
+              <mdui-list>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.mac_enable">启用 MAC 过滤</span>
+                  <mdui-switch slot="end-icon" id="proxy-mac-enable"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item>
+                  <span data-i18n="settings.proxy.mac_mode">MAC 过滤模式</span>
+                  <mdui-select slot="end-icon" id="proxy-mac-mode" value="blacklist" style="width: 120px;">
+                    <mdui-menu-item value="blacklist" data-i18n="uid.mode_blacklist">黑名单</mdui-menu-item>
+                    <mdui-menu-item value="whitelist" data-i18n="uid.mode_whitelist">白名单</mdui-menu-item>
+                  </mdui-select>
+                </mdui-list-item>
+              </mdui-list>
+              <mdui-text-field label="Proxy MACs" id="proxy-proxy-macs" rows="2" style="width: 100%; margin-top: 12px;"
+                data-i18n-label="settings.proxy.proxy_macs"></mdui-text-field>
+              <mdui-text-field label="Bypass MACs" id="proxy-bypass-macs" rows="2"
+                style="width: 100%; margin-top: 12px;" data-i18n-label="settings.proxy.bypass_macs"></mdui-text-field>
+            </div>
+          </mdui-card>
 
           <div style="padding: 16px; text-align: center;">
             <mdui-button variant="outlined" id="proxy-settings-back-btn" icon="arrow_back">
-              返回设置
+              <span data-i18n="common.back_settings">返回设置</span>
             </mdui-button>
           </div>
         </div>
