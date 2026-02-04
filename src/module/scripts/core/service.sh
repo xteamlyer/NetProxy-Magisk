@@ -12,7 +12,7 @@ readonly XRAY_LOG_FILE="$MODDIR/logs/xray.log"
 readonly CONFDIR="$MODDIR/config/xray/confdir"
 readonly OUTBOUNDS_DIR="$MODDIR/config/xray/outbounds"
 readonly TPROXY_CONF="$MODDIR/config/tproxy.conf"
-readonly TPROXY_RUNTIME_CONF="$MODDIR/logs/.tproxy_runtime.conf"
+
 readonly KILL_TIMEOUT=5
 
 # 检测 busybox 路径
@@ -129,12 +129,8 @@ do_start() {
         die "Xray 进程启动失败，请检查配置"
     fi
     
-    # 保存 TProxy 配置快照
-    cp -f "$TPROXY_CONF" "$TPROXY_RUNTIME_CONF"
-    log "INFO" "已保存 TProxy 配置快照"
-    
     # 启用 TProxy 规则
-    "$MODDIR/scripts/network/tproxy.sh" start
+    CONFIG_DIR="$MODDIR/config" "$MODDIR/scripts/network/tproxy.sh" start >> "$LOG_FILE" 2>&1
     
     log "INFO" "========== Xray 服务启动完成 =========="
 }
@@ -147,13 +143,7 @@ do_stop() {
     
     # 先清理 TProxy 规则（避免断网）
     log "INFO" "清理 TProxy 规则..."
-    if [ -f "$TPROXY_RUNTIME_CONF" ]; then
-        TPROXY_CONFIG="$TPROXY_RUNTIME_CONF" "$MODDIR/scripts/network/tproxy.sh" stop || true
-        rm -f "$TPROXY_RUNTIME_CONF"
-        log "INFO" "运行时配置快照已删除"
-    else
-        "$MODDIR/scripts/network/tproxy.sh" stop || true
-    fi
+    CONFIG_DIR="$MODDIR/config" "$MODDIR/scripts/network/tproxy.sh" stop >> "$LOG_FILE" 2>&1
     
     # 终止 Xray 进程
     local pid
