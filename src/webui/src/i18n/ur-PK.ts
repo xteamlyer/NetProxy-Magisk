@@ -77,7 +77,7 @@ const urPK: Record<string, string> = {
     'logs.service_log': 'سروس لاگ',
     'logs.title': 'لاگز',
     'logs.xray_log': 'Xray لاگ',
-    'logs.tproxy_log': 'TProxy لاگ',
+
     'logs.refresh': 'تازہ کریں',
     'logs.clean': 'صاف کریں',
     'logs.clean_success': 'لاگز صاف ہو گئے',

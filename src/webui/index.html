@@ -408,7 +408,6 @@
             <mdui-tabs id="logs-tabs" value="service">
               <mdui-tab value="service" data-i18n="logs.service_log">服务日志</mdui-tab>
               <mdui-tab value="xray" data-i18n="logs.xray_log">Xray 日志</mdui-tab>
-              <mdui-tab value="tproxy" data-i18n="logs.tproxy_log">TProxy 日志</mdui-tab>
 
               <!-- Service Log Panel -->
               <mdui-tab-panel slot="panel" value="service">
@@ -428,14 +427,6 @@
                 </div>
               </mdui-tab-panel>
 
-              <!-- TProxy Log Panel -->
-              <mdui-tab-panel slot="panel" value="tproxy">
-                <div style="padding: 16px;">
-                  <div class="log-container" id="tproxy-log" style="max-height: 400px; overflow-y: auto;">
-                    <mdui-circular-progress></mdui-circular-progress>
-                  </div>
-                </div>
-              </mdui-tab-panel>
             </mdui-tabs>
           </mdui-card>
 

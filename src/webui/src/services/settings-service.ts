@@ -496,13 +496,6 @@ export class SettingsService {
         }
     }
 
-    static async getTproxyLog(lines = 100) {
-        try {
-            return await KSU.exec(`tail -n ${lines} ${KSU.MODULE_PATH}/logs/tproxy.log`);
-        } catch (error) {
-            return '暂无日志';
-        }
-    }
 
     static async renewTProxy() {
         try {

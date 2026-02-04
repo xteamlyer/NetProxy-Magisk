@@ -91,7 +91,7 @@ const enUS: Record<string, string> = {
     'logs.service_log': 'Service Log',
     'logs.title': 'Logs',
     'logs.xray_log': 'Xray Log',
-    'logs.tproxy_log': 'TProxy Log',
+
     'logs.refresh': 'Refresh',
     'logs.clean': 'Clean',
     'logs.clean_success': 'Logs cleaned',

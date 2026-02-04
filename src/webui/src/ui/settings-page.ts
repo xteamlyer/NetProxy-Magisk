@@ -156,9 +156,9 @@ export class SettingsPageManager {
                     await SettingsService.setModuleSetting('AUTO_START', target.checked);
                     toast(
                         I18nService.t('settings.module.toast_autostart') +
-                            (target.checked
-                                ? I18nService.t('common.enabled')
-                                : I18nService.t('common.disabled')),
+                        (target.checked
+                            ? I18nService.t('common.enabled')
+                            : I18nService.t('common.disabled')),
                     );
                 } catch (error: any) {
                     toast(I18nService.t('common.set_failed') + error.message, true);
@@ -904,15 +904,15 @@ export class SettingsPageManager {
 
         const domains = domainsStr
             ? domainsStr
-                  .split(',')
-                  .map(d => d.trim())
-                  .filter(d => d)
+                .split(',')
+                .map(d => d.trim())
+                .filter(d => d)
             : [];
         const expectIPs = expectIPsStr
             ? expectIPsStr
-                  .split(',')
-                  .map(i => i.trim())
-                  .filter(i => i)
+                .split(',')
+                .map(i => i.trim())
+                .filter(i => i)
             : [];
 
         let server: string | DnsServer;
@@ -1204,8 +1204,8 @@ export class SettingsPageManager {
             mode === 'auto'
                 ? I18nService.t('settings.theme.mode_auto')
                 : mode === 'light'
-                  ? I18nService.t('settings.theme.mode_light')
-                  : I18nService.t('settings.theme.mode_dark');
+                    ? I18nService.t('settings.theme.mode_light')
+                    : I18nService.t('settings.theme.mode_dark');
         toast(I18nService.t('settings.theme.toast_mode_switched') + modeName);
 
         this.ui.statusPage.updateSpeedChartColors();
@@ -1252,10 +1252,10 @@ export class SettingsPageManager {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result
                 ? {
-                      r: parseInt(result[1], 16),
-                      g: parseInt(result[2], 16),
-                      b: parseInt(result[3], 16),
-                  }
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16),
+                }
                 : { r: 103, g: 80, b: 164 }; // 默认紫色
         };
 
@@ -1431,7 +1431,7 @@ export class SettingsPageManager {
             this.applyMonetSetting(enabled);
             toast(
                 I18nService.t('settings.monet.toast_toggled') +
-                    (enabled ? I18nService.t('common.enabled') : I18nService.t('common.disabled')),
+                (enabled ? I18nService.t('common.enabled') : I18nService.t('common.disabled')),
             );
         });
     }
@@ -1687,9 +1687,6 @@ export class SettingsPageManager {
             case 'xray':
                 this.loadXrayLog();
                 break;
-            case 'tproxy':
-                this.loadTproxyLog();
-                break;
         }
     }
 
@@ -1715,18 +1712,6 @@ export class SettingsPageManager {
 
         try {
             const log = await SettingsService.getXrayLog();
-            this.renderLog(container, log);
-        } catch (error: any) {
-            container.innerHTML = `<span style="color: var(--mdui-color-error);">${I18nService.t('logs.load_failed')}: ${error.message}</span>`;
-        }
-    }
-
-    async loadTproxyLog(): Promise<void> {
-        const container = document.getElementById('tproxy-log');
-        if (!container) return;
-
-        try {
-            const log = await SettingsService.getTproxyLog();
             this.renderLog(container, log);
         } catch (error: any) {
             container.innerHTML = `<span style="color: var(--mdui-color-error);">${I18nService.t('logs.load_failed')}: ${error.message}</span>`;
