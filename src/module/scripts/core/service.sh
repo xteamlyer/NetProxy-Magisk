@@ -130,7 +130,7 @@ do_start() {
     fi
     
     # 启用 TProxy 规则
-    CONFIG_DIR="$MODDIR/config" "$MODDIR/scripts/network/tproxy.sh" start >> "$LOG_FILE" 2>&1
+    "$MODDIR/scripts/network/tproxy.sh" start -d "$MODDIR/config" >> "$LOG_FILE" 2>&1
     
     log "INFO" "========== Xray 服务启动完成 =========="
 }
@@ -143,7 +143,7 @@ do_stop() {
     
     # 先清理 TProxy 规则（避免断网）
     log "INFO" "清理 TProxy 规则..."
-    CONFIG_DIR="$MODDIR/config" "$MODDIR/scripts/network/tproxy.sh" stop >> "$LOG_FILE" 2>&1
+    "$MODDIR/scripts/network/tproxy.sh" stop -d "$MODDIR/config" >> "$LOG_FILE" 2>&1
     
     # 终止 Xray 进程
     local pid
