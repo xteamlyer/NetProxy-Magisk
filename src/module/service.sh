@@ -128,6 +128,9 @@ log_env_info
 load_module_config
 
 if wait_for_boot; then
+    # 执行OnePlus A16修复
+    check_device_specific
+
     # 检查是否启用开机自启
     if [ "$AUTO_START" = "1" ]; then
         log "INFO" "开始启动服务..."
@@ -136,9 +139,7 @@ if wait_for_boot; then
     else
         log "INFO" "开机自启已禁用，跳过启动"
     fi
-    
-    # 执行设备特定脚本
-    check_device_specific
+
     log "INFO" "========== 服务启动流程结束 =========="
 else
     log "ERROR" "系统启动超时，无法启动 NetProxy"
