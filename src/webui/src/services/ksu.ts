@@ -6,7 +6,7 @@ import {
     exec as ksuExec,
     spawn as ksuSpawn,
     fullScreen,
-    enableInsets,
+    enableEdgeToEdge,
     toast as ksuToast,
     moduleInfo,
     listPackages as ksuListPackages,
@@ -189,7 +189,7 @@ export class KSU {
      * 设置 WebView 内边距
      */
     static setInsets(enable: boolean): void {
-        enableInsets(enable);
+        enableEdgeToEdge(enable);
     }
 
     // ==================== Toast ====================
