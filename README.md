@@ -155,3 +155,8 @@ vless://... 或 vmess://... 或 trojan://... 等
 ## 📜 许可证
 
 [GPL-3.0 License](LICENSE)
+
+
+## 🌟 Star
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Fanju6/NetProxy-Magisk&type=date&legend=top-left)](https://www.star-history.com/#Fanju6/NetProxy-Magisk&type=date&legend=top-left)
