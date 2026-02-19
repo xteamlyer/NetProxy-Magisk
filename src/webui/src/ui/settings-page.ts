@@ -1039,6 +1039,7 @@ export class SettingsPageManager {
             setVal('proxy-ipv6', settings.proxy_ipv6);
             setVal('proxy-force-mark-bypass', settings.force_mark_bypass);
             setVal('proxy-block-quic', settings.block_quic);
+            setVal('proxy-performance-mode', settings.compatibility_mode);
 
             // 接口设置
             setVal('proxy-mobile-int', settings.mobile_interface);
@@ -1110,6 +1111,7 @@ export class SettingsPageManager {
                 proxy_ipv6: getVal('proxy-ipv6', 'bool'),
                 force_mark_bypass: getVal('proxy-force-mark-bypass', 'bool'),
                 block_quic: getVal('proxy-block-quic', 'bool'),
+                compatibility_mode: getVal('proxy-performance-mode', 'bool'),
 
                 // 接口设置
                 mobile_interface: getVal('proxy-mobile-int'),

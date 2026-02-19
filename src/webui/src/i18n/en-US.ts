@@ -361,6 +361,8 @@ const enUS: Record<string, string> = {
     'settings.proxy.other_bypass_int': 'Other Bypass Interfaces',
     'settings.proxy.force_mark_bypass': 'Force Mark Bypass',
     'settings.proxy.block_quic': 'Block QUIC (UDP 443)',
+    'settings.proxy.performance_mode': 'Compatibility Mode',
+    'settings.proxy.performance_mode_desc': 'Fix proxy issues on some devices',
     'settings.proxy.dns_hijack': 'DNS Hijack',
     'settings.proxy.dns_port': 'DNS Port',
     'settings.proxy.bypass_cn': 'Bypass CN IP',

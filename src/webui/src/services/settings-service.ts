@@ -35,6 +35,7 @@ export interface ProxySettings {
     proxy_ipv6: boolean;
     force_mark_bypass: boolean;
     block_quic: boolean;
+    compatibility_mode: boolean;
 
     // DNS
     dns_hijack_enable: boolean;
@@ -207,6 +208,8 @@ export class SettingsService {
             settings.proxy_ipv6 = parseLine('PROXY_IPV6', 'bool');
             settings.force_mark_bypass = parseLine('FORCE_MARK_BYPASS', 'bool');
             settings.block_quic = parseLine('BLOCK_QUIC', 'bool');
+            // 兼容模式 = 禁用性能模式
+            settings.compatibility_mode = !parseLine('PERFORMANCE_MODE', 'bool');
 
             settings.dns_hijack_enable = parseLine('DNS_HIJACK_ENABLE', 'bool');
             settings.dns_port = parseLine('DNS_PORT', 'string');
@@ -282,6 +285,8 @@ export class SettingsService {
             updateKey('PROXY_IPV6', settings.proxy_ipv6);
             updateKey('FORCE_MARK_BYPASS', settings.force_mark_bypass);
             updateKey('BLOCK_QUIC', settings.block_quic);
+            // 兼容模式 = 禁用性能模式
+            updateKey('PERFORMANCE_MODE', !settings.compatibility_mode);
 
             updateKey('DNS_HIJACK_ENABLE', settings.dns_hijack_enable);
             updateKey('DNS_PORT', settings.dns_port, true);

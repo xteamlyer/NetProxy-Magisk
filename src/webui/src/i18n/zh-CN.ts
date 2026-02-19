@@ -358,6 +358,8 @@ const zhCN: Record<string, string> = {
     'settings.proxy.other_bypass_int': '其他绕过接口',
     'settings.proxy.force_mark_bypass': '强制 Mark 绕过',
     'settings.proxy.block_quic': '阻断 QUIC (UDP 443)',
+    'settings.proxy.performance_mode': '兼容模式',
+    'settings.proxy.performance_mode_desc': '修复部分设备代理异常的问题',
     'settings.proxy.dns_hijack': 'DNS 劫持',
     'settings.proxy.dns_port': 'DNS 端口',
     'settings.proxy.bypass_cn': '中国大陆 IP 绕过',
