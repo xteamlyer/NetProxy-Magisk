@@ -33,6 +33,8 @@ readonly BUSYBOX="$(detect_busybox)"
 # 导入工具库
 . "$MODDIR/scripts/utils/log.sh"
 
+export PATH="$MODDIR/bin:$PATH"
+
 #######################################
 # 错误退出
 #######################################
