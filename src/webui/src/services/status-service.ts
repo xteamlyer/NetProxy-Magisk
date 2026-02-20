@@ -64,7 +64,7 @@ export class StatusService {
     // 启动服务（非阻塞）
     static async startService(): Promise<boolean> {
         // 后台执行服务脚本，不等待完成 (fire-and-forget)
-        KSU.spawn('sh', [`${KSU.MODULE_PATH}/scripts/core/service.sh`, 'start']);
+        KSU.spawn('su', ['-c', `sh ${KSU.MODULE_PATH}/scripts/core/service.sh start >/dev/null 2>&1 &`]);
         // 轮询等待服务启动
         return await this.pollServiceStatus('running', 15000);
     }
@@ -72,7 +72,7 @@ export class StatusService {
     // 停止服务（非阻塞）
     static async stopService(): Promise<boolean> {
         // 后台执行服务脚本，不等待完成 (fire-and-forget)
-        KSU.spawn('sh', [`${KSU.MODULE_PATH}/scripts/core/service.sh`, 'stop']);
+        KSU.spawn('su', ['-c', `sh ${KSU.MODULE_PATH}/scripts/core/service.sh stop >/dev/null 2>&1 &`]);
         // 轮询等待服务停止
         return await this.pollServiceStatus('stopped', 10000);
     }
@@ -474,7 +474,7 @@ export class StatusService {
             );
 
             if (rulesFile) {
-                await KSU.exec(`rm -f ${rulesFile}`).catch(() => {});
+                await KSU.exec(`rm -f ${rulesFile}`).catch(() => { });
             }
 
             return result.includes('success');
