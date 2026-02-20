@@ -6,15 +6,7 @@ readonly MODDIR="${0%/*}"
 readonly MODULE_CONF="$MODDIR/config/module.conf"
 readonly LOG_FILE="$MODDIR/logs/service.log"
 
-#######################################
-# 日志函数
-#######################################
-log() {
-    local level="$1"
-    local msg="$2"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] [$level] $msg" >> "$LOG_FILE"
-}
+. "$MODDIR/scripts/utils/log.sh"
 
 #######################################
 # 加载模块配置

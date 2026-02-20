@@ -7,12 +7,7 @@ readonly SERVICE_SCRIPT="$MODDIR/scripts/core/service.sh"
 readonly LOG_FILE="$MODDIR/logs/service.log"
 readonly XRAY_BIN="$MODDIR/bin/xray"
 
-#######################################
-# 记录日志
-#######################################
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ACTION] $1" >> "$LOG_FILE"
-}
+. "$MODDIR/scripts/utils/log.sh"
 
 #######################################
 # 检查 Xray 是否运行
