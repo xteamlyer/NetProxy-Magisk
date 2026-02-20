@@ -115,8 +115,8 @@ backup_config() {
 extract_module() {
   print_step "解压模块文件..."
 
-  # 解压到 $MODPATH (Magisk 临时目录，重启后会复制到 $LIVE_DIR)
-  if ! unzip -o "$ZIPFILE" -d "$MODPATH" > /dev/null 2>&1; then
+  # 解压到 $MODPATH (Magisk 临时目录，重启后会复制到 $LIVE_DIR)，排除 META-INF 目录
+  if ! unzip -o "$ZIPFILE" -x "META-INF/*" -d "$MODPATH" > /dev/null 2>&1; then
     print_error "解压失败"
     return 1
   fi
@@ -310,7 +310,7 @@ if backup_config \
 
   cleanup
 
-  print_title "安装完成，无需重启设备"
+  print_title "安装完成，请重启设备"
 
   # 询问是否安装配套应用
   ask_install_app
